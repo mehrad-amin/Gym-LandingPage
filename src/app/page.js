@@ -9,6 +9,7 @@ import {
   FAQS,
 } from "@/constants/fitnessData";
 import ContactSection from "@/components/ContactSection";
+import { Counter } from "@/components/Counter";
 
 export default function FitnessLandingPage() {
   return (
@@ -48,7 +49,7 @@ export default function FitnessLandingPage() {
             {HERO_STATS.map((stat, i) => (
               <div key={i} className="text-center">
                 <p className="text-2xl font-black text-fitness-primary md:text-4xl">
-                  {stat.value}
+                  <Counter value={stat.value} duration={2} />
                 </p>
                 <p className="mt-1 text-xs text-fitness-muted md:text-sm">
                   {stat.label}

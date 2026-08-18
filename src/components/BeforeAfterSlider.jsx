@@ -32,7 +32,23 @@ export default function BeforeAfterSlider({ item }) {
           style={{ right: `${100 - sliderPosition}%` }}
         >
           <div className="absolute top-1/2 -right-3 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full bg-fitness-primary text-[10px] font-bold text-black">
-            ↔
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              width="14"
+              height="14"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <line x1="3" y1="12" x2="21" y2="12" />
+
+              <polyline points="8 7 3 12 8 17" />
+
+              <polyline points="16 7 21 12 16 17" />
+            </svg>
           </div>
         </div>
 
