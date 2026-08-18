@@ -8,6 +8,7 @@ import {
   PRICING_PLANS,
   FAQS,
 } from "@/constants/fitnessData";
+import ContactSection from "@/components/ContactSection";
 
 export default function FitnessLandingPage() {
   return (
@@ -197,6 +198,7 @@ export default function FitnessLandingPage() {
           </div>
         </div>
       </section>
+
       {/* سوالات متداول */}
       <section className="w-full border-t border-fitness-border py-20">
         <div className="mx-auto max-w-4xl px-6">
@@ -223,6 +225,9 @@ export default function FitnessLandingPage() {
           </div>
         </div>
       </section>
+
+      {/* بخش راه‌های ارتباطی و موقعیت مکانی */}
+      <ContactSection />
 
       {/* فرم ثبت نام */}
       <section

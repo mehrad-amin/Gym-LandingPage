@@ -1,4 +1,7 @@
 @import "tailwindcss";
+* {
+  scroll-behavior: smooth;
+}
 
 @theme {
   /* تنظیم فونت تایپوگرافی فارسی */

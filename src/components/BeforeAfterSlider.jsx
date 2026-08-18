@@ -11,7 +11,10 @@ export default function BeforeAfterSlider({ item }) {
 
   return (
     <div className="flex flex-col overflow-hidden rounded-3xl border border-fitness-border bg-fitness-surface p-4">
-      <div className="relative aspect-4/5 w-full select-none overflow-hidden rounded-2xl bg-neutral-900">
+      <div
+        dir="ltr"
+        className="relative aspect-4/5 w-full select-none overflow-hidden rounded-2xl bg-neutral-900"
+      >
         <div
           className="absolute inset-0 bg-neutral-800 bg-cover bg-center"
           style={{ backgroundImage: `url(${item.afterImg})` }}
@@ -44,10 +47,10 @@ export default function BeforeAfterSlider({ item }) {
         />
 
         <span className="absolute top-3 right-3 rounded-md bg-black/70 px-2.5 py-1 text-xs font-bold text-white backdrop-blur-xs">
-          قبل
+          بعد
         </span>
         <span className="absolute top-3 left-3 rounded-md bg-fitness-primary/90 px-2.5 py-1 text-xs font-bold text-black backdrop-blur-xs">
-          بعد
+          قبل
         </span>
       </div>
 
