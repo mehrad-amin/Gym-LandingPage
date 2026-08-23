@@ -1,45 +1,75 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+
+const INITIAL_FORM_DATA = {
+  weight: "",
+  height: "",
+  age: "",
+  gender: "male",
+  activity: "1.375",
+};
+
+const ACTIVITY_OPTIONS = [
+  { value: "1.2", label: "کم‌تحرک (بدون تمرین / پشت‌میزنشین)" },
+  { value: "1.375", label: "فعالیت سبک (۱ تا ۳ جلسه تمرین در هفته)" },
+  { value: "1.55", label: "فعالیت متوسط (۳ تا ۵ جلسه تمرین پرفشار)" },
+  { value: "1.725", label: "بسیار فعال (۶ تا ۷ جلسه تمرین سنگین)" },
+];
 
 export default function FitnessCalculator() {
-  const [weight, setWeight] = useState("");
-  const [height, setHeight] = useState("");
-  const [age, setAge] = useState("");
-  const [gender, setGender] = useState("male");
-  const [activity, setActivity] = useState("1.375");
-  const [result, setResult] = useState(null);
-
-  useEffect(() => {
+  // مقداردهی تنبل (Lazy Initializer) - بدون نیاز به useEffect
+  const [formData, setFormData] = useState(() => {
+    if (typeof window === "undefined") return INITIAL_FORM_DATA;
     try {
       const saved = sessionStorage.getItem("user_fitness_data");
       if (saved) {
         const parsed = JSON.parse(saved);
-        setWeight(parsed.weight || "");
-        setHeight(parsed.height || "");
-        setAge(parsed.age || "");
-        setGender(parsed.gender || "male");
-        setActivity(parsed.activity || "1.375");
-        setResult(parsed.result || null);
+        return {
+          weight: parsed.weight || "",
+          height: parsed.height || "",
+          age: parsed.age || "",
+          gender: parsed.gender || "male",
+          activity: parsed.activity || "1.375",
+        };
       }
     } catch (e) {
       console.error("Failed to parse fitness data", e);
     }
-  }, []);
+    return INITIAL_FORM_DATA;
+  });
+
+  const [result, setResult] = useState(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const saved = sessionStorage.getItem("user_fitness_data");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed.result || null;
+      }
+    } catch {
+      return null;
+    }
+    return null;
+  });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
   const calculateTDEE = (e) => {
     e.preventDefault();
-    const w = parseFloat(weight);
-    const h = parseFloat(height);
-    const a = parseFloat(age);
+    const w = parseFloat(formData.weight);
+    const h = parseFloat(formData.height);
+    const a = parseFloat(formData.age);
 
     if (!w || !h || !a) return;
 
-    // فرمول Mifflin-St Jeor
     let bmr = 10 * w + 6.25 * h - 5 * a;
-    bmr = gender === "male" ? bmr + 5 : bmr - 161;
+    bmr = formData.gender === "male" ? bmr + 5 : bmr - 161;
 
-    const tdee = Math.round(bmr * parseFloat(activity));
+    const tdee = Math.round(bmr * parseFloat(formData.activity));
     const calcResult = {
       tdee,
       cutting: Math.round(tdee - 450),
@@ -49,11 +79,7 @@ export default function FitnessCalculator() {
     setResult(calcResult);
 
     const payload = {
-      weight: w,
-      height: h,
-      age: a,
-      gender,
-      activity,
+      ...formData,
       result: calcResult,
     };
 
@@ -68,11 +94,7 @@ export default function FitnessCalculator() {
   };
 
   const handleReset = () => {
-    setWeight("");
-    setHeight("");
-    setAge("");
-    setGender("male");
-    setActivity("1.375");
+    setFormData(INITIAL_FORM_DATA);
     setResult(null);
 
     try {
@@ -84,6 +106,12 @@ export default function FitnessCalculator() {
       console.error("Failed to clear session", err);
     }
   };
+
+  const isFormDirty =
+    Boolean(result) ||
+    Boolean(formData.weight) ||
+    Boolean(formData.height) ||
+    Boolean(formData.age);
 
   return (
     <div className="rounded-3xl border border-fitness-border bg-fitness-surface p-6 md:p-10">
@@ -98,8 +126,7 @@ export default function FitnessCalculator() {
           </p>
         </div>
 
-        {/* دکمه پاک‌سازی و ریست */}
-        {(result || weight || height || age) && (
+        {isFormDirty && (
           <button
             type="button"
             onClick={handleReset}
@@ -128,10 +155,17 @@ export default function FitnessCalculator() {
         className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
       >
         <div>
-          <label className="mb-2 block text-xs text-fitness-muted">جنسیت</label>
+          <label
+            htmlFor="gender"
+            className="mb-2 block text-xs text-fitness-muted"
+          >
+            جنسیت
+          </label>
           <select
-            value={gender}
-            onChange={(e) => setGender(e.target.value)}
+            id="gender"
+            name="gender"
+            value={formData.gender}
+            onChange={handleChange}
             className="w-full rounded-xl border border-fitness-border bg-fitness-surface-light p-3 text-sm text-fitness-text outline-none focus:border-fitness-primary"
           >
             <option value="male">آقا</option>
@@ -140,13 +174,18 @@ export default function FitnessCalculator() {
         </div>
 
         <div>
-          <label className="mb-2 block text-xs text-fitness-muted">
+          <label
+            htmlFor="weight"
+            className="mb-2 block text-xs text-fitness-muted"
+          >
             وزن (کیلوگرم)
           </label>
           <input
+            id="weight"
+            name="weight"
             type="number"
-            value={weight}
-            onChange={(e) => setWeight(e.target.value)}
+            value={formData.weight}
+            onChange={handleChange}
             placeholder="مثلاً ۷۵"
             required
             className="w-full rounded-xl border border-fitness-border bg-fitness-surface-light p-3 text-sm text-fitness-text outline-none focus:border-fitness-primary"
@@ -154,13 +193,18 @@ export default function FitnessCalculator() {
         </div>
 
         <div>
-          <label className="mb-2 block text-xs text-fitness-muted">
+          <label
+            htmlFor="height"
+            className="mb-2 block text-xs text-fitness-muted"
+          >
             قد (سانتی‌متر)
           </label>
           <input
+            id="height"
+            name="height"
             type="number"
-            value={height}
-            onChange={(e) => setHeight(e.target.value)}
+            value={formData.height}
+            onChange={handleChange}
             placeholder="مثلاً ۱۸۰"
             required
             className="w-full rounded-xl border border-fitness-border bg-fitness-surface-light p-3 text-sm text-fitness-text outline-none focus:border-fitness-primary"
@@ -168,11 +212,18 @@ export default function FitnessCalculator() {
         </div>
 
         <div>
-          <label className="mb-2 block text-xs text-fitness-muted">سن</label>
+          <label
+            htmlFor="age"
+            className="mb-2 block text-xs text-fitness-muted"
+          >
+            سن
+          </label>
           <input
+            id="age"
+            name="age"
             type="number"
-            value={age}
-            onChange={(e) => setAge(e.target.value)}
+            value={formData.age}
+            onChange={handleChange}
             placeholder="مثلاً ۲۶"
             required
             className="w-full rounded-xl border border-fitness-border bg-fitness-surface-light p-3 text-sm text-fitness-text outline-none focus:border-fitness-primary"
@@ -180,22 +231,24 @@ export default function FitnessCalculator() {
         </div>
 
         <div className="sm:col-span-2 lg:col-span-4">
-          <label className="mb-2 block text-xs text-fitness-muted">
+          <label
+            htmlFor="activity"
+            className="mb-2 block text-xs text-fitness-muted"
+          >
             میزان فعالیت روزانه و هفتگی
           </label>
           <select
-            value={activity}
-            onChange={(e) => setActivity(e.target.value)}
+            id="activity"
+            name="activity"
+            value={formData.activity}
+            onChange={handleChange}
             className="w-full rounded-xl border border-fitness-border bg-fitness-surface-light p-3 text-sm text-fitness-text outline-none focus:border-fitness-primary"
           >
-            <option value="1.2">کم‌تحرک (بدون تمرین / پشت‌میزنشین)</option>
-            <option value="1.375">
-              فعالیت سبک (۱ تا ۳ جلسه تمرین در هفته)
-            </option>
-            <option value="1.55">
-              فعالیت متوسط (۳ تا ۵ جلسه تمرین پرفشار)
-            </option>
-            <option value="1.725">بسیار فعال (۶ تا ۷ جلسه تمرین سنگین)</option>
+            {ACTIVITY_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
           </select>
         </div>
 

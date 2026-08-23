@@ -1,13 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 
 export default function BeforeAfterSlider({ item }) {
   const [sliderPosition, setSliderPosition] = useState(50);
 
   const handleSliderChange = (e) => {
-    setSliderPosition(e.target.value);
+    setSliderPosition(Number(e.target.value));
   };
+
+  const offsetPercent = 100 - sliderPosition;
 
   return (
     <div className="flex flex-col overflow-hidden rounded-3xl border border-fitness-border bg-fitness-surface p-4">
@@ -15,21 +18,35 @@ export default function BeforeAfterSlider({ item }) {
         dir="ltr"
         className="relative aspect-4/5 w-full select-none overflow-hidden rounded-2xl bg-neutral-900"
       >
-        <div
-          className="absolute inset-0 bg-neutral-800 bg-cover bg-center"
-          style={{ backgroundImage: `url(${item.afterImg})` }}
-        />
-        <div
-          className="absolute inset-0 overflow-hidden bg-neutral-700 bg-cover bg-center"
-          style={{
-            backgroundImage: `url(${item.beforeImg})`,
-            clipPath: `inset(0 ${100 - sliderPosition}% 0 0)`,
-          }}
-        />
+        {/* تصویر بعد (پس‌زمینه کامل) */}
+        <div className="absolute inset-0">
+          <Image
+            src={item.afterImg}
+            alt={`${item.name} - بعد`}
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            className="object-cover object-center"
+          />
+        </div>
 
+        {/* تصویر قبل (با برش داینامیک) */}
+        <div
+          className="absolute inset-0 overflow-hidden"
+          style={{ clipPath: `inset(0 ${offsetPercent}% 0 0)` }}
+        >
+          <Image
+            src={item.beforeImg}
+            alt={`${item.name} - قبل`}
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            className="object-cover object-center"
+          />
+        </div>
+
+        {/* خط جداکننده و نشانگر وسط */}
         <div
           className="absolute top-0 bottom-0 w-0.5 bg-fitness-primary shadow-[0_0_10px_rgba(204,255,0,0.8)]"
-          style={{ right: `${100 - sliderPosition}%` }}
+          style={{ right: `${offsetPercent}%` }}
         >
           <div className="absolute top-1/2 -right-3 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full bg-fitness-primary text-[10px] font-bold text-black">
             <svg
@@ -39,19 +56,19 @@ export default function BeforeAfterSlider({ item }) {
               height="14"
               fill="none"
               stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
             >
               <line x1="3" y1="12" x2="21" y2="12" />
-
               <polyline points="8 7 3 12 8 17" />
-
               <polyline points="16 7 21 12 16 17" />
             </svg>
           </div>
         </div>
 
+        {/* کنترل‌کننده لمسی و اسلایدر */}
         <input
           type="range"
           min="0"
@@ -75,7 +92,7 @@ export default function BeforeAfterSlider({ item }) {
           <span className="text-base font-bold text-fitness-text">
             {item.name}
           </span>
-          <span className="rounded-full bbg-fitness-surface-light px-2.5 py-0.5 text-xs text-fitness-primary">
+          <span className="rounded-full bg-fitness-surface-light px-2.5 py-0.5 text-xs text-fitness-primary">
             {item.period}
           </span>
         </div>

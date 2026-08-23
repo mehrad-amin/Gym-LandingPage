@@ -1,17 +1,33 @@
 import { NextResponse } from "next/server";
 
+export const runtime = "nodejs";
+
+function escapeHtml(text) {
+  if (!text) return "";
+  return String(text)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
 export async function POST(request) {
   try {
     const body = await request.json();
     const { name, phone, goal, experience, notes, calculatedStats } = body;
 
     // اعتبارسنجی فیلدهای ضروری
-    if (!name || !phone) {
+    if (!name?.trim() || !phone?.trim()) {
       return NextResponse.json(
         { success: false, error: "لطفاً نام و شماره تماس خود را وارد کنید." },
         { status: 400 },
       );
     }
+
+    const safeName = escapeHtml(name.trim());
+    const safePhone = escapeHtml(phone.trim());
+    const safeGoal = escapeHtml(goal || "تعیین نشده");
+    const safeExperience = escapeHtml(experience || "ذکر نشده");
+    const safeNotes = escapeHtml(notes || "ندارد");
 
     // استانداردسازی شماره تماس
     let formattedPhone = phone.trim().replace(/[\s\-\+]/g, "");
@@ -21,9 +37,7 @@ export async function POST(request) {
 
     // ساخت بخش گزارش محاسبات بدنی در صورت وجود
     let statsSectionHtml = "";
-    let statsSectionPlain = "";
-
-    if (calculatedStats && calculatedStats.result) {
+    if (calculatedStats?.result) {
       const genderLabel = calculatedStats.gender === "female" ? "خانم" : "آقا";
       statsSectionHtml = `
 📊 <b>آنالیز بدنی و کالری:</b>
@@ -32,33 +46,30 @@ export async function POST(request) {
 • کالری تثبیت (TDEE): <b>${calculatedStats.result.tdee || "-"} kcal</b>
 • تارگت کات: <b>${calculatedStats.result.cutting || "-"} kcal</b>
 • تارگت حجم: <b>${calculatedStats.result.bulking || "-"} kcal</b>`;
-
-      statsSectionPlain = `
-📊 آنالیز بدنی و کالری:
-• مشخصات: ${genderLabel} / ${calculatedStats.age || "-"} سال
-• قد و وزن: ${calculatedStats.height || "-"}cm / ${calculatedStats.weight || "-"}kg
-• کالری تثبیت: ${calculatedStats.result.tdee || "-"} kcal
-• تارگت کات: ${calculatedStats.result.cutting || "-"} kcal
-• تارگت حجم: ${calculatedStats.result.bulking || "-"} kcal`;
     }
+
+    // تاریخ با منطقه زمانی تهران
+    const currentDate = new Date().toLocaleDateString("fa-IR", {
+      timeZone: "Asia/Tehran",
+    });
 
     // قالب پیام تلگرام
     const messageText = `🏋️‍♂️ <b>درخواست جدید مشاوره کوچینگ</b>
 ━━━━━━━━━━━━━━
-👤 <b>نام:</b> ${name}
-📞 <b>شماره:</b> <code>${phone}</code>
-🎯 <b>هدف:</b> ${goal || "تعیین نشده"}
-📊 <b>سابقه تمرین:</b> ${experience || "ذکر نشده"}
-📝 <b>توضیحات:</b> ${notes || "ندارد"}${statsSectionHtml}
+👤 <b>نام:</b> ${safeName}
+📞 <b>شماره:</b> <code>${safePhone}</code>
+🎯 <b>هدف:</b> ${safeGoal}
+📊 <b>سابقه تمرین:</b> ${safeExperience}
+📝 <b>توضیحات:</b> ${safeNotes}${statsSectionHtml}
 ━━━━━━━━━━━━━━
-⏰ <b>زمان:</b> ${new Date().toLocaleDateString("fa-IR")}`;
+⏰ <b>زمان:</b> ${currentDate}`;
 
     const telegramToken = process.env.TELEGRAM_BOT_TOKEN;
     const telegramChatId = process.env.TELEGRAM_CHAT_ID;
     const coachTelegramUsername =
       process.env.NEXT_PUBLIC_COACH_TELEGRAM_USERNAME || "";
 
-    // تعریف دکمه‌های شیشه‌ای اینلاین برای تلگرام
+    // دکمه اینلاین برای تلگرام
     const inlineKeyboard = {
       inline_keyboard: [
         [
@@ -70,15 +81,19 @@ export async function POST(request) {
       ],
     };
 
-    // ارسال غیرهمزمان و ایمن اعلان‌ها (Non-blocking)
     const notificationPromises = [];
 
     if (telegramToken && telegramChatId) {
+      const fetchOptions = {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: AbortSignal.timeout(5000), // جلوگیری از معلق ماندن رکوئست در Vercel
+      };
+
       // ۱. ارسال پیام متنی
       notificationPromises.push(
         fetch(`https://api.telegram.org/bot${telegramToken}/sendMessage`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+          ...fetchOptions,
           body: JSON.stringify({
             chat_id: telegramChatId,
             text: messageText,
@@ -89,24 +104,23 @@ export async function POST(request) {
       );
 
       // ۲. ارسال کارت کانتکت
-      const nameParts = name.trim().split(" ");
+      const nameParts = safeName.split(" ");
       notificationPromises.push(
         fetch(`https://api.telegram.org/bot${telegramToken}/sendContact`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+          ...fetchOptions,
           body: JSON.stringify({
             chat_id: telegramChatId,
             phone_number: formattedPhone.startsWith("+")
               ? formattedPhone
               : `+${formattedPhone}`,
-            first_name: nameParts[0] || name,
+            first_name: nameParts[0] || safeName,
             last_name: nameParts.slice(1).join(" ") || "شاگرد جدید",
           }),
         }).catch((err) => console.error("Telegram Contact Error:", err)),
       );
     }
 
-    // منتظر ماندن برای ارسال همه بدون خراب کردن ریسپانس
+    // ارسال موازی بدون معطل کردن ریسپانس در صورت خطای یک سرویس
     await Promise.allSettled(notificationPromises);
 
     return NextResponse.json(

@@ -11,6 +11,27 @@ import {
 import ContactSection from "@/components/ContactSection";
 import { Counter } from "@/components/Counter";
 
+function CheckIcon() {
+  return (
+    <svg
+      className="h-4 w-4 shrink-0 text-fitness-primary"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2.5"
+        d="M5 13l4 4L19 7"
+      />
+    </svg>
+  );
+}
+
+const CURRENT_YEAR = new Date().getFullYear();
+
 export default function FitnessLandingPage() {
   return (
     <main className="flex flex-col items-center justify-between">
@@ -166,19 +187,7 @@ export default function FitnessLandingPage() {
                         key={index}
                         className="flex items-center gap-2 text-sm text-fitness-muted"
                       >
-                        <svg
-                          className="h-4 w-4 shrink-0 text-fitness-primary"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2.5"
-                            d="M5 13l4 4L19 7"
-                          />
-                        </svg>
+                        <CheckIcon />
                         {feat}
                       </li>
                     ))}
@@ -252,8 +261,7 @@ export default function FitnessLandingPage() {
       <footer className="w-full border-t border-fitness-border bg-fitness-surface py-8 text-center text-xs text-fitness-muted">
         <div className="mx-auto max-w-6xl px-6">
           <p>
-            © {new Date().getFullYear()} تمامی حقوق برای آکادمی فیتنس و مربیگری
-            محفوظ است.
+            © {CURRENT_YEAR} تمامی حقوق برای آکادمی فیتنس و مربیگری محفوظ است.
           </p>
           <p className="mt-2 font-mono text-[11px] text-fitness-primary">
             Developed by mehrad_amin
