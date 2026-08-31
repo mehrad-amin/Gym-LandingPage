@@ -8,7 +8,6 @@ export async function fetchDietFromAI(studentDetailsText) {
     return "خطا: کلید API یافت نشد.";
   }
 
-  // اتصال به اندپوینت رایگان Groq با همان کلاینت OpenAI
   const openai = new OpenAI({
     baseURL: "https://api.groq.com/openai/v1",
     apiKey: apiKey,
@@ -28,16 +27,17 @@ ${studentDetailsText}
 ۴. در پایان، جمع کل کالری روزانه و تفکیک تقریبی پروتئین، کربوهیدرات و چربی مشخص شود.
 `;
 
-  // مدل‌های پرقدرت و ۱۰۰٪ رایگان Groq
-  const models = [
-    "llama-3.3-70b-versatile",
-    "qwen-2.5-32b",
-    "mixtral-8x7b-32768",
+  // لیست مدل‌های رسمی و فعال حال حاضر Groq
+  const activeGroqModels = [
+    "llama-3.1-8b-instant",
+    "llama-3.2-11b-vision-preview",
+    "llama-3.2-3b-preview",
+    "llama-3.2-1b-preview",
   ];
 
-  for (const model of models) {
+  for (const model of activeGroqModels) {
     try {
-      console.log(`🤖 Requesting free Groq model: ${model}...`);
+      console.log(`🤖 Requesting active Groq model: ${model}...`);
 
       const completion = await openai.chat.completions.create({
         model: model,
