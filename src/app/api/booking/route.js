@@ -78,6 +78,12 @@ export async function POST(request) {
             url: `https://t.me/${formattedPhone}`,
           },
         ],
+        [
+          {
+            text: "🤖 دریافت برنامه غذایی با هوش مصنوعی",
+            callback_data: "generate_ai_diet",
+          },
+        ],
       ],
     };
 
@@ -87,7 +93,7 @@ export async function POST(request) {
       const fetchOptions = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        signal: AbortSignal.timeout(5000), // جلوگیری از معلق ماندن رکوئست در Vercel
+        signal: AbortSignal.timeout(15000), // افزایش به ۱۵ ثانیه
       };
 
       // ۱. ارسال پیام متنی
