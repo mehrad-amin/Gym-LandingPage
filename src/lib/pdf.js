@@ -4,7 +4,6 @@ export async function generatePersianDietPdf(
   dietMarkdownText,
   studentData = {},
 ) {
-  // تبدیل مارک‌داون ساده به پاراگراف‌ها و خطوط زیبا
   const formattedContent = dietMarkdownText
     ? dietMarkdownText
         .replace(/\n\n/g, "<br/><br/>")
@@ -86,9 +85,10 @@ export async function generatePersianDietPdf(
     const chromium = (await import("@sparticuz/chromium")).default;
     const puppeteerCore = (await import("puppeteer-core")).default;
 
-    // کانفیگ بهینه برای اجرا در محیط سرورلس ورسل
-    chromium.setGraphicsMode = false;
-    const executablePath = await chromium.executablePath();
+    // لود باینری کرومیوم از پکیج ریموت تارگت برای حل مشکل مسیر سرورلس ورسل
+    const executablePath = await chromium.executablePath(
+      "https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar",
+    );
 
     browser = await puppeteerCore.launch({
       args: [
@@ -119,11 +119,9 @@ export async function generatePersianDietPdf(
   }
 
   const page = await browser.newPage();
-
-  // لود سریع بدون گیر کردن در networkidle0
   await page.setContent(htmlTemplate, {
     waitUntil: "domcontentloaded",
-    timeout: 10000,
+    timeout: 15000,
   });
 
   const pdfBuffer = await page.pdf({
