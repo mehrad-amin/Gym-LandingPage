@@ -27,36 +27,46 @@ ${studentDetailsText}
 ۴. در پایان، جمع کل کالری روزانه و تفکیک تقریبی پروتئین، کربوهیدرات و چربی مشخص شود.
 `;
 
-  // لیست مدل‌های رسمی و فعال حال حاضر Groq
-  const activeGroqModels = [
-    "llama-3.1-8b-instant",
-    "llama-3.2-11b-vision-preview",
-    "llama-3.2-3b-preview",
-    "llama-3.2-1b-preview",
-  ];
+  try {
+    // ۱. دریافت زنده لیست تمام مدل‌های فعال حال حاضر در سرور
+    const modelsList = await openai.models.list();
+    const availableModels = modelsList.data.map((m) => m.id);
+    console.log("📋 Currently Active Models on Groq:", availableModels);
 
-  for (const model of activeGroqModels) {
-    try {
-      console.log(`🤖 Requesting active Groq model: ${model}...`);
+    // ۲. فیلتر کردن مدل‌های متنی (صرف‌نظر از مدل‌های صرفاً صوتی مانند whisper)
+    const textModels = availableModels.filter(
+      (id) => !id.includes("whisper") && !id.includes("guard"),
+    );
 
-      const completion = await openai.chat.completions.create({
-        model: model,
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.6,
-      });
-
-      const text = completion.choices?.[0]?.message?.content;
-      if (text) {
-        console.log(`✅ Success with Groq model: ${model}`);
-        return text;
-      }
-    } catch (err) {
-      console.warn(
-        `⚠️ Groq model ${model} failed, switching to next...`,
-        err.message || err,
-      );
+    if (textModels.length === 0) {
+      throw new Error("هیچ مدل متنی فعالی یافت نشد.");
     }
+
+    // ۳. ارسال درخواست به اولین مدل فعال
+    for (const model of textModels) {
+      try {
+        console.log(`🤖 Requesting dynamically discovered model: ${model}...`);
+        const completion = await openai.chat.completions.create({
+          model: model,
+          messages: [{ role: "user", content: prompt }],
+          temperature: 0.6,
+        });
+
+        const text = completion.choices?.[0]?.message?.content;
+        if (text) {
+          console.log(`✅ Success with model: ${model}`);
+          return text;
+        }
+      } catch (err) {
+        console.warn(
+          `⚠️ Model ${model} failed, trying next available...`,
+          err.message || err,
+        );
+      }
+    }
+  } catch (err) {
+    console.error("❌ Failed to fetch active models:", err);
   }
 
-  return "خطا در اتصال به هوش مصنوعی رایگان. لطفاً مجدداً تلاش کنید.";
+  return "خطا در برقراری ارتباط با مدل‌های هوش مصنوعی. لطفاً دوباره تلاش کنید.";
 }
