@@ -4,77 +4,112 @@ export async function generatePersianDietPdf(
   dietMarkdownText,
   studentData = {},
 ) {
-  const formattedContent = dietMarkdownText
-    ? dietMarkdownText
-        .replace(/\n\n/g, "<br/><br/>")
-        .replace(/\n/g, "<br/>")
-        .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-    : "برنامه غذایی تدوین نشد.";
+  // فرمت‌بندی استاندارد خطوط و مارک‌داون برای نمایش تمیز در HTML
+  const formattedHtmlContent = (dietMarkdownText || "")
+    .replace(/^### (.*$)/gim, '<h3 class="diet-h3">$1</h3>')
+    .replace(/^## (.*$)/gim, '<h2 class="diet-h2">$1</h2>')
+    .replace(/^# (.*$)/gim, '<h1 class="diet-h1">$1</h1>')
+    .replace(/\*\*(.*?)\*\*/gim, "<strong>$1</strong>")
+    .replace(/\*(.*?)\*/gim, "<em>$1</em>")
+    .replace(/^- (.*$)/gim, '<li class="diet-li">$1</li>')
+    .replace(/^\d+\.\s+(.*$)/gim, '<li class="diet-num-li">$1</li>')
+    .replace(/\n\n/g, "<br/><br/>")
+    .replace(/\n/g, "<br/>");
 
   const htmlTemplate = `
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
   <meta charset="UTF-8">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/misc/Farsi-Digits/Vazirmatn-FD-font-face.css">
   <style>
-    @import url('https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/misc/Farsi-Digits/Vazirmatn-FD-font-face.css');
-    
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: 'Vazirmatn FD', 'Vazirmatn', Tahoma, sans-serif;
+      font-family: 'Vazirmatn FD', 'Vazirmatn', -apple-system, BlinkMacSystemFont, Tahoma, sans-serif;
     }
     body {
       background-color: #ffffff;
       color: #0f172a;
-      padding: 30px;
+      padding: 36px 40px;
       direction: rtl;
       text-align: right;
+      font-size: 13px;
+      line-height: 2.2;
     }
     .header {
-      border-bottom: 2px solid #e2e8f0;
-      padding-bottom: 14px;
-      margin-bottom: 20px;
+      border-bottom: 2px solid #0284c7;
+      padding-bottom: 16px;
+      margin-bottom: 24px;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
     .title {
-      font-size: 18px;
-      font-weight: 800;
-      color: #0284c7;
+      font-size: 20px;
+      font-weight: 900;
+      color: #0369a1;
     }
     .badge {
-      background: #f1f5f9;
-      padding: 4px 10px;
-      border-radius: 6px;
-      font-size: 11px;
-      font-weight: 600;
-      color: #475569;
-    }
-    .content {
+      background: #e0f2fe;
+      border: 1px solid #bae6fd;
+      padding: 6px 14px;
+      border-radius: 8px;
       font-size: 12px;
-      line-height: 2.2;
+      font-weight: 700;
+      color: #0369a1;
+    }
+    .diet-h1 {
+      font-size: 16px;
+      font-weight: 800;
+      color: #0f172a;
+      margin-top: 20px;
+      margin-bottom: 8px;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 4px;
+    }
+    .diet-h2 {
+      font-size: 14px;
+      font-weight: 700;
+      color: #0284c7;
+      margin-top: 16px;
+      margin-bottom: 6px;
+    }
+    .diet-h3 {
+      font-size: 13px;
+      font-weight: 700;
+      color: #334155;
+      margin-top: 12px;
+      margin-bottom: 4px;
+    }
+    .diet-li, .diet-num-li {
+      margin-right: 18px;
+      margin-bottom: 4px;
       color: #334155;
     }
+    strong {
+      color: #0f172a;
+      font-weight: 700;
+    }
     .footer {
-      margin-top: 30px;
+      margin-top: 36px;
       border-top: 1px solid #e2e8f0;
-      padding-top: 10px;
+      padding-top: 12px;
       text-align: center;
-      font-size: 10px;
-      color: #94a3b8;
+      font-size: 11px;
+      color: #64748b;
     }
   </style>
 </head>
 <body>
   <div class="header">
     <div class="title">📋 برنامه غذایی اختصاصی ۳۰ روزه</div>
-    <div class="badge">تنظیم‌شده توسط مربی هوشمند</div>
+    <div class="badge">تنظیم‌شده با مربی هوشمند</div>
   </div>
-  <div class="content">${formattedContent}</div>
-  <div class="footer">طراحی‌شده برای مربی ورزشی • رعایت تنوع غذایی و مصرف آب کافی الزامی است.</div>
+  <div class="content">${formattedHtmlContent}</div>
+  <div class="footer">طراحی‌شده اختصاصی برای مربی ورزشی • رعایت تنوع غذایی و مصرف منظم آب الزامی است.</div>
 </body>
 </html>
   `;
@@ -85,7 +120,6 @@ export async function generatePersianDietPdf(
     const chromium = (await import("@sparticuz/chromium")).default;
     const puppeteerCore = (await import("puppeteer-core")).default;
 
-    // لود باینری کرومیوم از پکیج ریموت تارگت برای حل مشکل مسیر سرورلس ورسل
     const executablePath = await chromium.executablePath(
       "https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar",
     );
@@ -96,6 +130,7 @@ export async function generatePersianDietPdf(
         "--disable-dev-shm-usage",
         "--disable-gpu",
         "--no-sandbox",
+        "--font-render-hinting=none",
       ],
       defaultViewport: chromium.defaultViewport,
       executablePath,
@@ -119,15 +154,17 @@ export async function generatePersianDietPdf(
   }
 
   const page = await browser.newPage();
-  await page.setContent(htmlTemplate, {
-    waitUntil: "domcontentloaded",
-    timeout: 15000,
-  });
+
+  // لود ساختار صفحه
+  await page.setContent(htmlTemplate, { waitUntil: "load", timeout: 20000 });
+
+  // تضمین لود کامل فونت فارسی وزیر قبل از تهیه PDF
+  await page.evaluateHandle("document.fonts.ready");
 
   const pdfBuffer = await page.pdf({
     format: "A4",
     printBackground: true,
-    margin: { top: "20px", bottom: "20px", left: "20px", right: "20px" },
+    margin: { top: "24px", bottom: "24px", left: "24px", right: "24px" },
   });
 
   await browser.close();
