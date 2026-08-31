@@ -1,21 +1,18 @@
 import OpenAI from "openai";
 
 export async function fetchDietFromAI(studentDetailsText) {
-  const apiKey = process.env.OPENROUTER_API_KEY;
+  const apiKey = process.env.GROQ_API_KEY;
 
   if (!apiKey) {
-    console.error("❌ OPENROUTER_API_KEY is missing!");
+    console.error("❌ GROQ_API_KEY is missing!");
     return "خطا: کلید API یافت نشد.";
   }
 
+  // اتصال به اندپوینت رایگان Groq با همان کلاینت OpenAI
   const openai = new OpenAI({
-    baseURL: "https://openrouter.ai/api/v1",
+    baseURL: "https://api.groq.com/openai/v1",
     apiKey: apiKey,
     timeout: 30000,
-    defaultHeaders: {
-      "HTTP-Referer": "https://gym-my-landing-page.vercel.app",
-      "X-Title": "Gym Coaching App",
-    },
   });
 
   const prompt = `
@@ -31,18 +28,16 @@ ${studentDetailsText}
 ۴. در پایان، جمع کل کالری روزانه و تفکیک تقریبی پروتئین، کربوهیدرات و چربی مشخص شود.
 `;
 
-  // اولویت ۱ تا ۴: مدل‌های فعال رایگان | اولویت ۵: مدل فوق‌ارزان تجاری به عنوان پشتیبان
-  const candidateModels = [
-    "google/gemini-2.0-flash-exp:free",
-    "meta-llama/llama-3.2-3b-instruct:free",
-    "mistralai/mistral-7b-instruct:free",
-    "qwen/qwen-2.5-coder-32b-instruct:free",
-    "deepseek/deepseek-chat", // پشتیبان تجاری (هزینه ناچیز)
+  // مدل‌های پرقدرت و ۱۰۰٪ رایگان Groq
+  const models = [
+    "llama-3.3-70b-versatile",
+    "qwen-2.5-32b",
+    "mixtral-8x7b-32768",
   ];
 
-  for (const model of candidateModels) {
+  for (const model of models) {
     try {
-      console.log(`🤖 Requesting model: ${model}...`);
+      console.log(`🤖 Requesting free Groq model: ${model}...`);
 
       const completion = await openai.chat.completions.create({
         model: model,
@@ -52,16 +47,16 @@ ${studentDetailsText}
 
       const text = completion.choices?.[0]?.message?.content;
       if (text) {
-        console.log(`✅ Success with model: ${model}`);
+        console.log(`✅ Success with Groq model: ${model}`);
         return text;
       }
     } catch (err) {
       console.warn(
-        `⚠️ Model ${model} failed, switching to next...`,
+        `⚠️ Groq model ${model} failed, switching to next...`,
         err.message || err,
       );
     }
   }
 
-  return "خطا در برقراری ارتباط با مدل‌های هوش مصنوعی. لطفاً دوباره تلاش کنید.";
+  return "خطا در اتصال به هوش مصنوعی رایگان. لطفاً مجدداً تلاش کنید.";
 }
