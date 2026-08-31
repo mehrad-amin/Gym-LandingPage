@@ -11,7 +11,7 @@ export async function fetchDietFromAI(studentDetailsText) {
   const openai = new OpenAI({
     baseURL: "https://openrouter.ai/api/v1",
     apiKey: apiKey,
-    timeout: 25000,
+    timeout: 30000,
     defaultHeaders: {
       "HTTP-Referer": "https://gym-my-landing-page.vercel.app",
       "X-Title": "Gym Coaching App",
@@ -31,16 +31,18 @@ ${studentDetailsText}
 ۴. در پایان، جمع کل کالری روزانه و تفکیک تقریبی پروتئین، کربوهیدرات و چربی مشخص شود.
 `;
 
-  // لیست مدل‌های کاملاً رایگان (بدون کسر حتی ۱ سنت)
-  const freeFallbackModels = [
-    "deepseek/deepseek-chat:free",
-    "meta-llama/llama-3.3-70b-instruct:free",
-    "qwen/qwen-2.5-72b-instruct:free",
+  // اولویت ۱ تا ۴: مدل‌های فعال رایگان | اولویت ۵: مدل فوق‌ارزان تجاری به عنوان پشتیبان
+  const candidateModels = [
+    "google/gemini-2.0-flash-exp:free",
+    "meta-llama/llama-3.2-3b-instruct:free",
+    "mistralai/mistral-7b-instruct:free",
+    "qwen/qwen-2.5-coder-32b-instruct:free",
+    "deepseek/deepseek-chat", // پشتیبان تجاری (هزینه ناچیز)
   ];
 
-  for (const model of freeFallbackModels) {
+  for (const model of candidateModels) {
     try {
-      console.log(`🤖 Requesting free model: ${model}...`);
+      console.log(`🤖 Requesting model: ${model}...`);
 
       const completion = await openai.chat.completions.create({
         model: model,
@@ -50,16 +52,16 @@ ${studentDetailsText}
 
       const text = completion.choices?.[0]?.message?.content;
       if (text) {
-        console.log(`✅ Success response from: ${model}`);
+        console.log(`✅ Success with model: ${model}`);
         return text;
       }
     } catch (err) {
       console.warn(
-        `⚠️ Free model ${model} failed, switching to next...`,
+        `⚠️ Model ${model} failed, switching to next...`,
         err.message || err,
       );
     }
   }
 
-  return "خطا در اتصال به مدل‌های رایگان هوش مصنوعی. لطفاً لحظاتی دیگر امتحان کنید.";
+  return "خطا در برقراری ارتباط با مدل‌های هوش مصنوعی. لطفاً دوباره تلاش کنید.";
 }
