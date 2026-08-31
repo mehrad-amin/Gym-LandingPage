@@ -3,7 +3,8 @@ import { fetchDietFromAI } from "@/lib/ai";
 import { generatePersianDietPdf } from "@/lib/pdf";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const dynamic = "force-dynamic";
+export const maxDuration = 60; // افزایش زمان اجرای تابع روی ورسل تا ۶۰ ثانیه
 
 export async function POST(request) {
   try {
@@ -21,34 +22,32 @@ export async function POST(request) {
       const originalMessageId = message.message_id;
       const originalText = message.text || "";
 
-      // ۱. پاسخ فوری و بدون معطلی به تلگرام برای بستن حلقه لودینگ و قطع تلاش مجدد تلگرام
+      // ۱. ثبت پاسخ کلیک برای جلوگیری از لودینگ تلگرام
       fetch(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           callback_query_id: callbackQueryId,
-          text: "⏳ درخواست دریافت شد؛ در حال تدوین و ساخت PDF...",
+          text: "⏳ در حال ساخت رژیم با هوش مصنوعی و صدور PDF...",
         }),
       }).catch(console.error);
 
-      // ۲. اجرای فرایند ساخت رژیم در پس‌زمینه (بدون await تا ریسپانس معطل نماند)
-      processDietAndSendPdf(
+      // ۲. اجرای کامل پروسه قبل از بستن فانکشن ورسل
+      await processDietAndSendPdf(
         botToken,
         chatId,
         originalMessageId,
         originalText,
-      ).catch((err) => console.error("Background Process Error:", err));
+      );
     }
 
-    // بازگرداندن پاسخ فوری 200 به تلگرام (جلوگیری قطعی از تکرار درخواست توسط تلگرام)
     return NextResponse.json({ ok: true });
   } catch (error) {
-    console.error("Webhook Error:", error);
-    return NextResponse.json({ ok: true }); // حتی در صورت خطا هم 200 می‌دهیم تا تلگرام اسپم نکند
+    console.error("❌ Webhook Fatal Error:", error);
+    return NextResponse.json({ ok: true });
   }
 }
 
-// تابع پردازش پس‌زمینه
 async function processDietAndSendPdf(
   botToken,
   chatId,
@@ -58,7 +57,7 @@ async function processDietAndSendPdf(
   let statusMessageId = null;
 
   try {
-    // ارسال پیام وضعیت موقت
+    // ارسال پیام وضعیت به چت
     const statusRes = await fetch(
       `https://api.telegram.org/bot${botToken}/sendMessage`,
       {
@@ -66,7 +65,7 @@ async function processDietAndSendPdf(
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           chat_id: chatId,
-          text: "📄 در حال پردازش اطلاعات شاگرد و ساخت فایل PDF برنامه ۳۰ روزه...",
+          text: "🤖 هوش مصنوعی در حال تنظیم رژیم و طراحی فایل PDF اختصاصی است...",
           reply_to_message_id: originalMessageId,
         }),
       },
@@ -74,13 +73,16 @@ async function processDietAndSendPdf(
     const statusData = await statusRes.json();
     statusMessageId = statusData?.result?.message_id;
 
-    // ۱. دریافت متن از هوش مصنوعی
+    // ۱. دریافت متن رژیم
+    console.log("⏳ Fetching diet from AI...");
     const dietText = await fetchDietFromAI(originalText);
 
-    // ۲. ساخت بافر PDF
+    // ۲. تولید بافر PDF
+    console.log("⏳ Generating PDF via Chromium...");
     const pdfBuffer = await generatePersianDietPdf(dietText);
 
     // ۳. ارسال فایل به تلگرام
+    console.log("⏳ Uploading PDF to Telegram...");
     const formData = new FormData();
     formData.append("chat_id", chatId.toString());
     formData.append(
@@ -88,20 +90,17 @@ async function processDietAndSendPdf(
       new Blob([pdfBuffer], { type: "application/pdf" }),
       "Diet-Plan-30Days.pdf",
     );
-    formData.append(
-      "caption",
-      "✅ برنامه غذایی ۳۰ روزه با موفقیت تنظیم و ارسال شد.",
-    );
+    formData.append("caption", "✅ برنامه غذایی ۳۰ روزه با موفقیت صادر شد.");
     formData.append("reply_to_message_id", originalMessageId.toString());
 
     await fetch(`https://api.telegram.org/bot${botToken}/sendDocument`, {
       method: "POST",
       body: formData,
     });
+    console.log("✅ PDF sent successfully!");
   } catch (err) {
-    console.error("Diet Pipeline Failed:", err);
+    console.error("❌ Pipeline Failed:", err);
   } finally {
-    // پاک کردن پیام وضعیت موقت
     if (statusMessageId) {
       fetch(`https://api.telegram.org/bot${botToken}/deleteMessage`, {
         method: "POST",
