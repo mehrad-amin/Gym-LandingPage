@@ -33,7 +33,6 @@ ${studentDetailsText}
   // لیست مدل‌ها به ترتیب اولویت فراخوانی
   const fallbackModels = [
     "google/gemini-3.5-flash", // اولویت اول: مدل جمینای فلش
-    "google/gemini-2.5-flash", // اولویت دوم: نسخه پشتیبان جمینای
     "deepseek/deepseek-chat", // اولویت سوم: دیپ‌سیک
     "meta-llama/llama-3.3-70b-instruct", // اولویت چهارم: لاما
     "openai/gpt-4o-mini", // اولویت پنجم: اوپن‌ای‌آی
