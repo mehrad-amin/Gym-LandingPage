@@ -11,7 +11,7 @@ export async function fetchDietFromAI(studentDetailsText) {
   const openai = new OpenAI({
     baseURL: "https://api.groq.com/openai/v1",
     apiKey: apiKey,
-    timeout: 35000,
+    timeout: 45000,
   });
 
   const systemInstruction = `
@@ -66,7 +66,7 @@ ${studentDetailsText}
 
 ## 🔄 راهنمای جایگزینی سریع
 - **پروتئین‌ها:** ۱ کف دست سینه مرغ/گوشت = ۲ عدد تخم‌مرغ کامل = ۱ قوطی کبریت پنیر = ۱ پیاله ماست پرپروتئین
-- **کربوهیدرات‌ها:** ۵ قاشق غذاخوری برنج = ۱ عدد سیب‌زمینی متوسط = ۱ پیاله ذرت آبپز = ۱ کف دست نان مناسب
+- **کربوهیدرات‌ها:** ۱۰ قاشق غذاخوری برنج = ۲ عدد سیب‌زمینی متوسط = ۱ پیاله ذرت آبپز = ۱ کف دست نان مناسب
 
 ## 💡 ۳ اصل کلیدی برای نتیجه‌گیری حداکثری
 ۱. **مصرف آب:** حداقل ۸ تا ۱۰ لیوان در طول روز.
@@ -90,32 +90,46 @@ ${studentDetailsText}
             { role: "system", content: systemInstruction },
             { role: "user", content: userPrompt },
           ],
-          temperature: 0.2, // حداقل دما برای جلوگیری از پرحرفی و حفظ ساختار
+          temperature: 0.2,
+          max_tokens: 3500,
         });
 
-        let text = completion.choices?.[0]?.message?.content;
+        let rawText = completion.choices?.[0]?.message?.content || "";
 
-        if (text) {
-          // ۱. حذف تگ‌های استاندارد تفکر
-          text = text.replace(/<think>[\s\S]*?<\/think>/gi, "");
+        if (rawText) {
+          // ۱. حذف تگ‌های تفکر سیستمی
+          let cleanText = rawText.replace(/<think>[\s\S]*?<\/think>/gi, "");
 
-          // ۲. برش قطعی: حذف هر چیزی که قبل از اولین خط «هدف اصلی» یا «اهداف و استراتژی» قرار دارد
-          const firstHeaderIndex = text.search(/##\s*🎯|##\s*اهداف/);
-          if (firstHeaderIndex !== -1) {
-            text = text.substring(firstHeaderIndex);
+          // ۲. پیدا کردن آخرین وقوع عنوان شروع برنامه برای حذف قطعی چرک‌نویس‌های انگلیسی
+          const farsiAnchor = cleanText.lastIndexOf("- **هدف اصلی:**");
+          const altAnchor = cleanText.lastIndexOf("هدف اصلی");
+
+          if (farsiAnchor !== -1) {
+            const headerIndex = cleanText.lastIndexOf("##", farsiAnchor);
+            cleanText = cleanText.substring(
+              headerIndex !== -1 ? headerIndex : farsiAnchor,
+            );
+          } else if (altAnchor !== -1) {
+            const headerIndex = cleanText.lastIndexOf("##", altAnchor);
+            cleanText = cleanText.substring(
+              headerIndex !== -1 ? headerIndex : altAnchor,
+            );
           }
 
-          // ۳. حذف بخش‌های پیش‌نویس اضافی در انتهای متن در صورت وجود
-          text = text
+          // ۳. حذف بک‌تیک‌ها و فاصله‌های اضافی
+          cleanText = cleanText
             .replace(/```markdown/gi, "")
             .replace(/```/g, "")
             .trim();
 
-          console.log(`✅ Clean response generated with model: ${model}`);
-          return text;
+          console.log(`✅ Clean Persian diet generated with model: ${model}`);
+          return cleanText;
         }
       } catch (err) {
-        console.warn(`⚠️ Model ${model} failed, trying next...`);
+        console.warn(
+          `⚠️ Model ${model} failed, switching to next...`,
+          err.message || err,
+        );
       }
     }
   } catch (err) {
