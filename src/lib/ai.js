@@ -11,25 +11,25 @@ export async function fetchDietFromAI(studentDetailsText) {
   const openai = new OpenAI({
     baseURL: "https://api.groq.com/openai/v1",
     apiKey: apiKey,
-    timeout: 35000,
+    timeout: 40000,
   });
 
   const fullPrompt = `
-شما یک مربی ارشد فیتنس و متخصص تغذیه بالینی هستید. وظیفه شما نوشتن یک برنامه غذایی ۳۰ روزه استاندارد، شفاف و کاربردی به زبان فارسی بر اساس مشخصات زیر است:
+شما یک مربی ارشد فیتنس و متخصص تغذیه بالینی هستید. وظیفه شما نوشتن یک برنامه غذایی ۳۰ روزه استاندارد، کاربردی و بدون گلوتن به زبان فارسی بر اساس مشخصات زیر است:
 
 مشخصات متقاضی:
 ${studentDetailsText}
 
-قوانین حیاتی (بسیار مهم):
-۱. خروجی باید ۱۰۰٪ فارسی باشد. از نوشتن هرگونه تحلیل، پیش‌نویس انگلیسی یا تکرار کلمات اکیداً خودداری کن.
-۲. حجم غذاها متناسب با هدف:
-   - برای افزایش حجم/عضله‌سازی: سهم برنج ناهار ۱۰ تا ۱۲ قاشق غذاخوری، شام ۶ تا ۸ قاشق یا ۲ عدد سیب‌زمینی متوسط، همراه با روغن زیتون و مغزیجات.
-   - برای کاهش وزن/کات: سهم برنج ناهار ۵ تا ۶ قاشق، شام ۳ تا ۴ قاشق و تمرکز بر سبزیجات فیبردار.
-   - برای تثبیت وزن: سهم برنج ناهار ۷ تا ۸ قاشق و شام ۴ تا ۵ قاشق.
-۳. مقیاس‌ها منحصراً خانگی و ساده باشند (کف دست، قاشق غذاخوری، عدد، پیاله/پیمانه). از تکرار نام واحدها یا استفاده از پرانتزهای بی‌مورد خودداری کن.
-۴. در صورت وجود حساسیت غذایی (مثل حساسیت به گلوتن)، منابع گندم و جو معمولی را حذف و از برنج، سیب‌زمینی، کینوا، ذرت و نان فاقد گلوتن استفاده کن.
+قوانین نگارش:
+۱. خروجی باید ۱۰۰٪ فارسی روان و منسجم باشد. از درج هرگونه یادداشت، انگلیسی یا تکرار کلمات خودداری کن.
+۲. تنظیم حجم غذاها بر اساس هدف:
+   - برای افزایش حجم/عضله‌سازی: ناهار ۱۰ تا ۱۲ قاشق غذاخوری برنج، شام ۶ تا ۸ قاشق یا ۲ عدد سیب‌زمینی متوسط، همراه با روغن زیتون و مغزیجات.
+   - برای کاهش وزن/کات: ناهار ۵ تا ۶ قاشق برنج، شام ۳ تا ۴ قاشق و تأکید بر سبزیجات.
+   - برای تثبیت وزن: ناهار ۷ تا ۸ قاشق و شام ۴ تا ۵ قاشق.
+۳. مقیاس‌ها منحصراً خانگی و ساده باشند (کف دست، قاشق غذاخوری، عدد، پیاله/لیوان).
+۴. با توجه به حساسیت به گلوتن، از گندم و جو استفاده نکن و فقط برنج، سیب‌زمینی، کینوا، ذرت و نان بدون گلوتن پیشنهاد بده.
 
-ساختار دقیق خروجی (دقیقاً با همین عناوین شروع شود):
+قالب دقیق خروجی (دقیقاً با همین عناوین شروع و تکمیل شود):
 
 ## 🎯 اهداف و استراتژی تغذیه
 - **هدف اصلی:** [هدف متقاضی]
@@ -46,7 +46,7 @@ ${studentDetailsText}
 
 ### ۳. ناهار (یکی از دو گزینه انتخاب شود)
 - **گزینه الف:** [پروتئین + کربوهیدرات متناسب با هدف + سالاد با ۱ قاشق روغن زیتون]
-- **گزینه ب:** [غذای جایگزین ایرانی متناسب با هدف]
+- **گزینه ب:** [غذای جایگزین متناسب با هدف]
 
 ### ۴. میان‌وعده عصر (قبل تمرین / عصرانه)
 - [میان‌وعده مقوی متناسب با هدف]
@@ -68,19 +68,30 @@ ${studentDetailsText}
   try {
     const modelsList = await openai.models.list();
     const availableModels = modelsList.data.map((m) => m.id);
+
+    // فیلتر مدل‌های متنی
     const textModels = availableModels.filter(
       (id) => !id.includes("whisper") && !id.includes("guard"),
     );
 
+    // مرتب‌سازی هوشمند: قرار دادن مدل‌های بزرگ (70b) در ابتدای صف
+    textModels.sort((a, b) => {
+      const aIs70b = a.includes("70b") || a.includes("llama-3.3");
+      const bIs70b = b.includes("70b") || b.includes("llama-3.3");
+      if (aIs70b && !bIs70b) return -1;
+      if (!aIs70b && bIs70b) return 1;
+      return 0;
+    });
+
     for (const model of textModels) {
       try {
-        console.log(`🤖 Requesting model: ${model}...`);
+        console.log(`🤖 Requesting priority model: ${model}...`);
         const completion = await openai.chat.completions.create({
           model: model,
           messages: [{ role: "user", content: fullPrompt }],
-          temperature: 0.5,
-          frequency_penalty: 0.8, // جریمه سنگین برای ریشه‌کن کردن تکرار کلمات
-          presence_penalty: 0.4,
+          temperature: 0.3,
+          frequency_penalty: 0.1, // مقدار امن برای حفظ دستور زبان فارسی
+          presence_penalty: 0.1,
           max_tokens: 2200,
         });
 
@@ -89,7 +100,6 @@ ${studentDetailsText}
         if (rawText) {
           let cleanText = rawText.replace(/<think>[\s\S]*?<\/think>/gi, "");
 
-          // برش دقیق از شروع بدنه فارسی
           const farsiAnchor = cleanText.lastIndexOf("- **هدف اصلی:**");
           const altAnchor = cleanText.lastIndexOf("هدف اصلی");
 
@@ -105,7 +115,6 @@ ${studentDetailsText}
             );
           }
 
-          // پایان‌بندی تمیز بعد از اصل سوم
           const endAnchor = cleanText.indexOf("۳. **زمان‌بندی شام:**");
           if (endAnchor !== -1) {
             const nextLineIndex = cleanText.indexOf("\n", endAnchor);
@@ -119,12 +128,12 @@ ${studentDetailsText}
             .replace(/```/g, "")
             .trim();
 
-          console.log(`✅ Perfectly formatted diet generated with: ${model}`);
+          console.log(`✅ Robust diet generated with model: ${model}`);
           return cleanText;
         }
       } catch (err) {
         console.warn(
-          `⚠️ Model ${model} failed, switching to next...`,
+          `⚠️ Model ${model} failed, trying next...`,
           err.message || err,
         );
       }
