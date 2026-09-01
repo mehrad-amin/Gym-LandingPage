@@ -96,9 +96,16 @@ ${studentDetailsText}
         let text = completion.choices?.[0]?.message?.content;
 
         if (text) {
-          // ۱. پاکسازی تگ‌های Thinking و متون تحلیلی انگلیسی
+          // ۱. حذف تگ‌های استاندارد تفکر
           text = text.replace(/<think>[\s\S]*?<\/think>/gi, "");
-          text = text.replace(/^[\s\S]*?(?=## 🎯)/i, ""); // حذف هر متن انگلیسی قبل از شروع تیتر اول
+
+          // ۲. برش قطعی: حذف هر چیزی که قبل از اولین خط «هدف اصلی» یا «اهداف و استراتژی» قرار دارد
+          const firstHeaderIndex = text.search(/##\s*🎯|##\s*اهداف/);
+          if (firstHeaderIndex !== -1) {
+            text = text.substring(firstHeaderIndex);
+          }
+
+          // ۳. حذف بخش‌های پیش‌نویس اضافی در انتهای متن در صورت وجود
           text = text
             .replace(/```markdown/gi, "")
             .replace(/```/g, "")
