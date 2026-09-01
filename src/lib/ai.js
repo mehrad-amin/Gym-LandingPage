@@ -11,34 +11,35 @@ export async function fetchDietFromAI(studentDetailsText) {
   const openai = new OpenAI({
     baseURL: "https://api.groq.com/openai/v1",
     apiKey: apiKey,
-    timeout: 45000,
+    timeout: 30000,
   });
 
   const systemInstruction = `
 You are an expert sports nutritionist and clinical fitness coach.
 CRITICAL RULES:
 1. Output MUST be ONLY in fluent Persian (Farsi).
-2. DO NOT output any English thinking process, reasoning, planning steps, or intros like "Here's a thinking process".
+2. DO NOT output any English thinking process, reasoning steps, or notes.
 3. Start IMMEDIATELY with the first markdown heading "## 🎯 اهداف و استراتژی تغذیه".
 4. Absolutely NO markdown codeblocks (\`\`\`markdown or \`\`\`).
-5. STRICT UNIT RULES:
-   - Use "کف دست" ONLY for bread, chicken breast, meat, and fish. NEVER use "کف دست" for rice or liquids.
+5. NEVER repeat sections or generate infinite repetitive loops. Stop immediately after the 3 core principles.
+6. STRICT UNIT RULES:
+   - Use "کف دست" ONLY for bread, chicken breast, meat, and fish. NEVER for rice or liquids.
    - Use "قاشق غذاخوری" for rice, quinoa, and oats.
    - Use "عدد" for eggs, potatoes, and fruits.
    - Use "پیاله" for salad and yogurt.
-6. CALORIE & PORTION SCALING:
-   - If the goal is "افزایش حجم / عضله‌سازی" (Bulking / >2400 kcal): Carbohydrate and protein portions MUST be generous (e.g., 10-14 tbsp rice for lunch, 6-8 tbsp for dinner, 2 medium potatoes, plus healthy fats like nuts/olive oil). DO NOT give tiny portions like 2-5 tbsp rice for bulking.
-   - If the goal is "کاهش وزن / کات" (Cutting): Moderate carbs (5-6 tbsp rice) and higher fibrous vegetables.
-7. Strictly respect all allergies and notes (e.g., Gluten allergy -> no wheat, barley, standard bread, or regular pasta. Use rice, potatoes, corn, quinoa, or certified gluten-free options).
+7. CALORIE & PORTION SCALING:
+   - If Bulking (>2400 kcal): Rice 10-14 tbsp lunch, 6-8 tbsp dinner, 2 medium potatoes, nuts/olive oil.
+   - If Cutting: Rice 5-6 tbsp, high fibrous vegetables.
+8. Strictly respect Gluten allergy (no wheat, barley, standard bread, regular pasta).
 `;
 
   const userPrompt = `
-بر اساس مشخصات زیر، برنامه غذایی ۳۰ روزه را با رعایت دقیق سهم‌ها متناسب با هدف (حجم یا کات) و با مقیاس‌های خانگی صحیح تنظیم کن:
+بر اساس مشخصات زیر، برنامه غذایی ۳۰ روزه را کوتاه، دقیق و بدون تکرار تنظیم کن:
 
 مشخصات متقاضی:
 ${studentDetailsText}
 
-قالب دقیق خروجی (دقیقاً با همین عناوین مارک‌داون شروع و تکمیل شود):
+قالب دقیق خروجی (دقیقاً همین بخش‌ها و بدون تکرار اضافه):
 
 ## 🎯 اهداف و استراتژی تغذیه
 - **هدف اصلی:** [هدف متقاضی]
@@ -90,17 +91,18 @@ ${studentDetailsText}
             { role: "system", content: systemInstruction },
             { role: "user", content: userPrompt },
           ],
-          temperature: 0.2,
-          max_tokens: 3500,
+          temperature: 0.6, // جلوگیری از لوپ تکرار توکن
+          frequency_penalty: 0.5, // جریمه سنگین برای تکرار عبارات
+          presence_penalty: 0.3,
+          max_tokens: 2000,
         });
 
         let rawText = completion.choices?.[0]?.message?.content || "";
 
         if (rawText) {
-          // ۱. حذف تگ‌های تفکر سیستمی
           let cleanText = rawText.replace(/<think>[\s\S]*?<\/think>/gi, "");
 
-          // ۲. پیدا کردن آخرین وقوع عنوان شروع برنامه برای حذف قطعی چرک‌نویس‌های انگلیسی
+          // برش ابتدای متن از هدف اصلی
           const farsiAnchor = cleanText.lastIndexOf("- **هدف اصلی:**");
           const altAnchor = cleanText.lastIndexOf("هدف اصلی");
 
@@ -116,7 +118,15 @@ ${studentDetailsText}
             );
           }
 
-          // ۳. حذف بک‌تیک‌ها و فاصله‌های اضافی
+          // برش انتهای متن (حذف هر متنی بعد از اصل سوم برای جلوگیری از لوپ)
+          const endAnchor = cleanText.indexOf("۳. **زمان‌بندی شام:**");
+          if (endAnchor !== -1) {
+            const nextLineIndex = cleanText.indexOf("\n", endAnchor);
+            if (nextLineIndex !== -1) {
+              cleanText = cleanText.substring(0, nextLineIndex);
+            }
+          }
+
           cleanText = cleanText
             .replace(/```markdown/gi, "")
             .replace(/```/g, "")
