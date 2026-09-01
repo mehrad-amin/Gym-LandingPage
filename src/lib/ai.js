@@ -11,26 +11,31 @@ export async function fetchDietFromAI(studentDetailsText) {
   const openai = new OpenAI({
     baseURL: "https://api.groq.com/openai/v1",
     apiKey: apiKey,
-    timeout: 30000,
+    timeout: 35000,
   });
 
-  const prompt = `
-[ROLE]
-شما یک مربی ارشد فیتنس و متخصص تغذیه ورزشی بالینی هستید. وظیفه شما تدوین یک برنامه غذایی ۳۰ روزه استاندارد، شفاف و کاربردی بر اساس اطلاعات شاگرد است.
+  const systemInstruction = `
+You are an expert sports nutritionist and fitness coach.
+CRITICAL RULES:
+1. Output MUST be ONLY in Persian (Farsi).
+2. DO NOT output any English thinking process, reasoning, planning steps, or intros like "Here's a thinking process".
+3. Start IMMEDIATELY with the first markdown heading "## 🎯 اهداف و استراتژی تغذیه".
+4. Absolutely NO markdown backticks at the beginning/end (\`\`\`markdown or \`\`\`).
+5. Strictly use household units (کف دست، قاشق غذاخوری، لیوان، پیاله) instead of grams or calorie numbers.
+6. Consider all dietary notes and allergies (like gluten allergy) carefully.
+`;
 
-[STUDENT_DATA]
+  const userPrompt = `
+بر اساس مشخصات زیر، برنامه غذایی ۳۰ روزه را دقیقاً طبق ساختار مشخص‌شده تنظیم کن:
+
+مشخصات متقاضی:
 ${studentDetailsText}
 
-[STRICT_RULES]
-۱. زبان پاسخ: ۱۰۰٪ فارسی روان و اصطلاحات متداول سفره ایرانی.
-۲. فرمت مقیاس‌ها: از نوشتن گرم‌های گیج‌کننده و محاسبات ریاضی خودداری کن. حتماً از مقیاس‌های خانگی استفاده کن (مثلاً: کف دست بدون انگشت، قاشق غذاخوری، لیوان، پیاله ماست‌خوری، عدد).
-۳. از آوردن مقدمه، سلام، احوالپرسی یا جملات اضافی در ابتدا و انتهای متن اکیداً خودداری کن. خروجی باید مستقیماً با تیتر شروع شود.
-۴. ساختار خروجی باید «دقیقاً» طبق قالب مشخص‌شده زیر باشد و تمام تیترها با نشانه‌های مارک‌داون (## و ###) درج شوند.
+قالب دقیق خروجی (دقیقاً با همین عناوین مارک‌داون شروع و پر شود):
 
-[OUTPUT_FORMAT_TEMPLATE]
 ## 🎯 اهداف و استراتژی تغذیه
-- **هدف اصلی:** [تعیین هدف بر اساس اطلاعات متقاضی]
-- **رویکرد تغذیه‌ای:** [۱ الی ۲ جمله توضیح شفاف درباره استراتژی رژیم]
+- **هدف اصلی:** [هدف متقاضی]
+- **رویکرد تغذیه‌ای:** [توضیح کوتاه ۱ الی ۲ جمله‌ای متناسب با شرایط و حساسیت‌های غذایی]
 
 ## 🍳 وعده‌های اصلی و میان‌وعده‌ها
 
@@ -39,68 +44,69 @@ ${studentDetailsText}
 - **گزینه ب:** [آیتم‌های جایگزین با مقیاس خانگی]
 
 ### ۲. میان‌وعده اول (ساعت ۱۰ تا ۱۱ صبح)
-- [یک گزینه سبک و انرژی‌بخش]
+- [گزینه سبک و مقوی]
 
 ### ۳. ناهار (یکی از دو گزینه انتخاب شود)
-- **گزینه الف:** [غذای اصلی + منبع کربوهیدرات + سالاد/سبزیجات با مقیاس خانگی]
-- **گزینه ب:** [غذای جایگزین ایرانی و در دسترس با مقیاس خانگی]
+- **گزینه الف:** [غذای اصلی + منبع کربوهیدرات + سالاد با مقیاس خانگی]
+- **گزینه ب:** [غذای جایگزین با مقیاس خانگی]
 
-### ۴. میان‌وعده عصر (قبل از تمرین یا غروب)
-- [گزینه مقوی متناسب با سوخت تمرین]
+### ۴. میان‌وعده عصر (قبل تمرین / عصرانه)
+- [سوخت مناسب تمرین با مقیاس خانگی]
 
 ### ۵. شام (سبک و زودهنگام)
-- **گزینه الف:** [شام پروتئینی و سبک با مقیاس خانگی]
-- **گزینه ب:** [شام جایگزین ساده و سریع]
+- **گزینه الف:** [شام پروتئینی و متناسب با شرایط متقاضی]
+- **گزینه ب:** [شام جایگزین ساده]
 
 ## 🔄 راهنمای جایگزینی سریع
-- **پروتئین‌ها:** ۱ کف دست سینه مرغ = ۱ عدد تخم‌مرغ کامل + ۲ سفیده = ۱ قوطی کبریت پنیر کم‌چرب = ۱ پیاله ماست یونانی
-- **کربوهیدرات‌ها:** ۵ قاشق غذاخوری برنج = ۱ کف دست نان سنگک/جو = ۱ عدد سیب‌زمینی متوسط = ۴ قاشق جو دوسر
+- **پروتئین‌ها:** ۱ کف دست سینه مرغ/گوشت = ۲ عدد تخم‌مرغ = ۱ قوطی کبریت پنیر = ۱ پیاله ماست پرپروتئین
+- **کربوهیدرات‌ها:** ۵ قاشق غذاخوری برنج = ۱ عدد سیب‌زمینی متوسط = ۱ پیاله ذرت آبپز = ۱ کف دست نان مناسب
 
 ## 💡 ۳ اصل کلیدی برای نتیجه‌گیری حداکثری
-۱. **مصرف آب:** حداقل ۸ تا ۱۰ لیوان در طول روز تقسیم شود.
-۲. **خواب و ریکاوری:** حداقل ۷ ساعت خواب باکیفیت شبانه.
-۳. **زمان‌بندی شام:** آخرین وعده حداقل ۲ تا ۳ ساعت قبل از خواب میل شود.`;
+۱. **مصرف آب:** حداقل ۸ تا ۱۰ لیوان در طول روز.
+۲. **خواب و ریکاوری:** حداقل ۷ تا ۸ ساعت خواب شبانه.
+۳. **زمان‌بندی شام:** صرف آخرین وعده ۲ الی ۳ ساعت پیش از خواب.
+`;
 
   try {
-    // ۱. دریافت زنده لیست تمام مدل‌های فعال حال حاضر در سرور
     const modelsList = await openai.models.list();
     const availableModels = modelsList.data.map((m) => m.id);
-    console.log("📋 Currently Active Models on Groq:", availableModels);
-
-    // ۲. فیلتر کردن مدل‌های متنی (صرف‌نظر از مدل‌های صرفاً صوتی مانند whisper)
     const textModels = availableModels.filter(
       (id) => !id.includes("whisper") && !id.includes("guard"),
     );
 
-    if (textModels.length === 0) {
-      throw new Error("هیچ مدل متنی فعالی یافت نشد.");
-    }
-
-    // ۳. ارسال درخواست به اولین مدل فعال
     for (const model of textModels) {
       try {
-        console.log(`🤖 Requesting dynamically discovered model: ${model}...`);
+        console.log(`🤖 Requesting model: ${model}...`);
         const completion = await openai.chat.completions.create({
           model: model,
-          messages: [{ role: "user", content: prompt }],
-          temperature: 0.6,
+          messages: [
+            { role: "system", content: systemInstruction },
+            { role: "user", content: userPrompt },
+          ],
+          temperature: 0.2, // حداقل دما برای جلوگیری از پرحرفی و حفظ ساختار
         });
 
-        const text = completion.choices?.[0]?.message?.content;
+        let text = completion.choices?.[0]?.message?.content;
+
         if (text) {
-          console.log(`✅ Success with model: ${model}`);
+          // ۱. پاکسازی تگ‌های Thinking و متون تحلیلی انگلیسی
+          text = text.replace(/<think>[\s\S]*?<\/think>/gi, "");
+          text = text.replace(/^[\s\S]*?(?=## 🎯)/i, ""); // حذف هر متن انگلیسی قبل از شروع تیتر اول
+          text = text
+            .replace(/```markdown/gi, "")
+            .replace(/```/g, "")
+            .trim();
+
+          console.log(`✅ Clean response generated with model: ${model}`);
           return text;
         }
       } catch (err) {
-        console.warn(
-          `⚠️ Model ${model} failed, trying next available...`,
-          err.message || err,
-        );
+        console.warn(`⚠️ Model ${model} failed, trying next...`);
       }
     }
   } catch (err) {
-    console.error("❌ Failed to fetch active models:", err);
+    console.error("❌ Failed AI Execution:", err);
   }
 
-  return "خطا در برقراری ارتباط با مدل‌های هوش مصنوعی. لطفاً دوباره تلاش کنید.";
+  return "خطا در تدوین برنامه غذایی. لطفاً مجدداً تلاش کنید.";
 }
