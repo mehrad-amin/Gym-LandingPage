@@ -11,63 +11,67 @@ export async function fetchDietFromAI(studentDetailsText) {
   const openai = new OpenAI({
     baseURL: "https://api.groq.com/openai/v1",
     apiKey: apiKey,
-    timeout: 30000,
+    timeout: 35000,
   });
 
   const systemInstruction = `
-You are an expert sports nutritionist and clinical fitness coach.
-CRITICAL RULES:
+You are an expert sports nutritionist.
+RULES:
 1. Output MUST be ONLY in fluent Persian (Farsi).
-2. DO NOT output any English thinking process, reasoning steps, or notes.
-3. Start IMMEDIATELY with the first markdown heading "## 🎯 اهداف و استراتژی تغذیه".
-4. Absolutely NO markdown codeblocks (\`\`\`markdown or \`\`\`).
-5. NEVER repeat sections or generate infinite repetitive loops. Stop immediately after the 3 core principles.
-6. STRICT UNIT RULES:
-   - Use "کف دست" ONLY for bread, chicken breast, meat, and fish. NEVER for rice or liquids.
-   - Use "قاشق غذاخوری" for rice, quinoa, and oats.
-   - Use "عدد" for eggs, potatoes, and fruits.
-   - Use "پیاله" for salad and yogurt.
-7. CALORIE & PORTION SCALING:
-   - If Bulking (>2400 kcal): Rice 10-14 tbsp lunch, 6-8 tbsp dinner, 2 medium potatoes, nuts/olive oil.
-   - If Cutting: Rice 5-6 tbsp, high fibrous vegetables.
-8. Strictly respect Gluten allergy (no wheat, barley, standard bread, regular pasta).
+2. DO NOT output any English thinking process, notes, or codeblocks.
+3. Start IMMEDIATELY with "## 🎯 اهداف و استراتژی تغذیه".
+4. DYNAMIC PORTION SIZING (MUST STRICTLY MATCH THE STUDENT'S GOAL):
+   - IF GOAL IS "افزایش حجم / عضله‌سازی" (Bulking / High Calorie):
+     * Lunch: 10-14 tbsp rice/quinoa or 2-3 medium potatoes + 2 palms meat/chicken.
+     * Dinner: 6-8 tbsp rice/quinoa or 2 medium potatoes + 1-2 palms protein.
+     * Include dense calorie sources: nuts, peanut butter, olive oil.
+   - IF GOAL IS "کاهش وزن / چربی‌سوزی / کات" (Cutting / Calorie Deficit):
+     * Lunch: 5-6 tbsp rice/quinoa or 1 medium potato + 1-2 palms lean protein + generous salad.
+     * Dinner: 3-4 tbsp rice/quinoa or 1 small potato (or carb-free option) + lean protein + fibrous vegetables.
+     * Limit fats: 1 tsp olive oil, light yogurt, fruits in moderation.
+   - IF GOAL IS "تثبیت وزن / سلامتی" (Maintenance):
+     * Balanced moderate portions (7-8 tbsp rice for lunch, 4-5 tbsp for dinner).
+   - IF GOAL IS "آماده‌سازی مسابقات / کات عمیق":
+     * Focus on ultra-lean proteins (tilapia, chicken breast, egg whites), zero simple sugars, strict complex carbs (oats/rice/sweet potato), high fibrous greens (broccoli/asparagus), and elimination of dense calorie dressings.
+5. WRITING STYLE:
+   - Write cleanly and naturally (e.g., "۱۲ قاشق غذاخوری برنج" or "۱ کف دست سینه مرغ").
+   - NEVER duplicate words (DO NOT write "برنج برنجی" or repeated parentheses).
+6. ALLERGIES: Strictly follow dietary restrictions (e.g., Gluten-free: strictly use rice, potato, quinoa, certified gluten-free options).
 `;
 
   const userPrompt = `
-بر اساس مشخصات زیر، برنامه غذایی ۳۰ روزه را کوتاه، دقیق و بدون تکرار تنظیم کن:
-
 مشخصات متقاضی:
 ${studentDetailsText}
 
-قالب دقیق خروجی (دقیقاً همین بخش‌ها و بدون تکرار اضافه):
+با توجه به هدف و کالری مشخص‌شده در بالا، برنامه غذایی ۳۰ روزه را در قالب زیر تدوین کن:
 
 ## 🎯 اهداف و استراتژی تغذیه
-- **هدف اصلی:** [هدف متقاضی]
-- **رویکرد تغذیه‌ای:** [توضیح کوتاه ۱ الی ۲ جمله‌ای متناسب با شرایط، تارگت کالری و حساسیت‌های غذایی]
+- **هدف اصلی:** [هدف دقیق متقاضی]
+- **رویکرد تغذیه‌ای:** [توضیح ۱ الی ۲ جمله‌ای متناسب با کالری، ماکروها و حساسیت‌های متقاضی]
 
 ## 🍳 وعده‌های اصلی و میان‌وعده‌ها
 
 ### ۱. صبحانه (یکی از دو گزینه انتخاب شود)
-- **گزینه الف:** [ترکیب پروتئین + کربوهیدرات مناسب با مقیاس خانگی]
+- **گزینه الف:** [ترکیب پروتئین + کربوهیدرات مناسب با هدف و مقیاس خانگی]
 - **گزینه ب:** [گزینه جایگزین با مقیاس خانگی]
 
 ### ۲. میان‌وعده اول (ساعت ۱۰ تا ۱۱ صبح)
-- [میوه + منبع چربی سالم یا مغزیجات]
+- [میوه + مغزیجات متناسب با هدف کالری]
 
 ### ۳. ناهار (یکی از دو گزینه انتخاب شود)
-- **گزینه الف:** [پروتئین + کربوهیدرات کافی متناسب با تارگت کالری + سالاد با روغن زیتون]
-- **گزینه ب:** [غذای جایگزین ایرانی و در دسترس]
+- **گزینه الف:** [پروتئین + کربوهیدرات دقیق متناسب با هدف حجم/کات + سالاد با روغن زیتون]
+- **گزینه ب:** [غذای جایگزین متناسب با هدف]
 
 ### ۴. میان‌وعده عصر (قبل تمرین / عصرانه)
 - [سوخت مناسب تمرین متناسب با هدف]
 
 ### ۵. شام (سبک و زودهنگام)
-- **گزینه الف:** [پروتئین باکیفیت + کربوهیدرات متناسب با هدف + سبزیجات]
+- **گزینه الف:** [پروتئین باکیفیت + سهم کربوهیدرات متناسب با هدف + سبزیجات]
 - **گزینه ب:** [شام جایگزین ساده]
 
 ## 🔄 راهنمای جایگزینی سریع
 - **پروتئین‌ها:** ۱ کف دست سینه مرغ/گوشت = ۲ عدد تخم‌مرغ کامل = ۱ قوطی کبریت پنیر = ۱ پیاله ماست پرپروتئین
-- **کربوهیدرات‌ها:** ۱۰ قاشق غذاخوری برنج = ۲ عدد سیب‌زمینی متوسط = ۱ پیاله ذرت آبپز = ۱ کف دست نان مناسب
+- **کربوهیدرات‌ها:** ۵ قاشق غذاخوری برنج = ۱ عدد سیب‌زمینی متوسط = ۱ پیاله ذرت آبپز = ۱ کف دست نان مناسب
 
 ## 💡 ۳ اصل کلیدی برای نتیجه‌گیری حداکثری
 ۱. **مصرف آب:** حداقل ۸ تا ۱۰ لیوان در طول روز.
@@ -91,10 +95,8 @@ ${studentDetailsText}
             { role: "system", content: systemInstruction },
             { role: "user", content: userPrompt },
           ],
-          temperature: 0.6, // جلوگیری از لوپ تکرار توکن
-          frequency_penalty: 0.5, // جریمه سنگین برای تکرار عبارات
-          presence_penalty: 0.3,
-          max_tokens: 2000,
+          temperature: 0.35,
+          max_tokens: 2200,
         });
 
         let rawText = completion.choices?.[0]?.message?.content || "";
@@ -102,7 +104,6 @@ ${studentDetailsText}
         if (rawText) {
           let cleanText = rawText.replace(/<think>[\s\S]*?<\/think>/gi, "");
 
-          // برش ابتدای متن از هدف اصلی
           const farsiAnchor = cleanText.lastIndexOf("- **هدف اصلی:**");
           const altAnchor = cleanText.lastIndexOf("هدف اصلی");
 
@@ -118,7 +119,6 @@ ${studentDetailsText}
             );
           }
 
-          // برش انتهای متن (حذف هر متنی بعد از اصل سوم برای جلوگیری از لوپ)
           const endAnchor = cleanText.indexOf("۳. **زمان‌بندی شام:**");
           if (endAnchor !== -1) {
             const nextLineIndex = cleanText.indexOf("\n", endAnchor);
@@ -132,7 +132,9 @@ ${studentDetailsText}
             .replace(/```/g, "")
             .trim();
 
-          console.log(`✅ Clean Persian diet generated with model: ${model}`);
+          console.log(
+            `✅ Clean adaptive Persian diet generated with model: ${model}`,
+          );
           return cleanText;
         }
       } catch (err) {
