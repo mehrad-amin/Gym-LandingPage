@@ -11,17 +11,17 @@ export async function fetchDietFromAI(studentDetailsText) {
   const openai = new OpenAI({
     baseURL: "https://api.groq.com/openai/v1",
     apiKey: apiKey,
-    timeout: 40000,
+    timeout: 35000,
   });
 
-  const fullPrompt = `
-شما یک مربی ارشد فیتنس و متخصص تغذیه بالینی هستید. وظیفه شما نوشتن یک برنامه غذایی ۳۰ روزه استاندارد، کاربردی و بدون گلوتن به زبان فارسی بر اساس مشخصات زیر است:
+  const prompt = `
+شما یک مربی ارشد فیتنس و متخصص تغذیه بالینی هستید. وظیفه شما تنظیم یک برنامه غذایی ۳۰ روزه استاندارد، کاربردی و بدون گلوتن به زبان فارسی بر اساس مشخصات زیر است:
 
 مشخصات متقاضی:
 ${studentDetailsText}
 
 قوانین نگارش:
-۱. خروجی باید ۱۰۰٪ فارسی روان و منسجم باشد. از درج هرگونه یادداشت، انگلیسی یا تکرار کلمات خودداری کن.
+۱. خروجی باید ۱۰۰٪ فارسی روان و منسجم باشد. از درج هرگونه یادداشت، انگلیسی یا تکرار کلمات اکیداً خودداری کن.
 ۲. تنظیم حجم غذاها بر اساس هدف:
    - برای افزایش حجم/عضله‌سازی: ناهار ۱۰ تا ۱۲ قاشق غذاخوری برنج، شام ۶ تا ۸ قاشق یا ۲ عدد سیب‌زمینی متوسط، همراه با روغن زیتون و مغزیجات.
    - برای کاهش وزن/کات: ناهار ۵ تا ۶ قاشق برنج، شام ۳ تا ۴ قاشق و تأکید بر سبزیجات.
@@ -66,32 +66,46 @@ ${studentDetailsText}
 `;
 
   try {
-    const modelsList = await openai.models.list();
-    const availableModels = modelsList.data.map((m) => m.id);
+    // ۱. دریافت زنده تمام مدل‌های موجود از سرور
+    const modelsResponse = await openai.models.list();
+    const allModels = modelsResponse.data.map((m) => m.id);
 
-    // فیلتر مدل‌های متنی
-    const textModels = availableModels.filter(
-      (id) => !id.includes("whisper") && !id.includes("guard"),
-    );
-
-    // مرتب‌سازی هوشمند: قرار دادن مدل‌های بزرگ (70b) در ابتدای صف
-    textModels.sort((a, b) => {
-      const aIs70b = a.includes("70b") || a.includes("llama-3.3");
-      const bIs70b = b.includes("70b") || b.includes("llama-3.3");
-      if (aIs70b && !bIs70b) return -1;
-      if (!aIs70b && bIs70b) return 1;
-      return 0;
+    // ۲. حذف مدل‌های نامرتبط با تولید متن رژیم
+    const textModels = allModels.filter((id) => {
+      const lower = id.toLowerCase();
+      return (
+        !lower.includes("whisper") &&
+        !lower.includes("guard") &&
+        !lower.includes("vision") &&
+        !lower.includes("tool")
+      );
     });
 
+    // ۳. رتبه‌بندی پویا بر اساس قدرت مدل (بدون هاردکد کردن نام مدل خاص)
+    textModels.sort((a, b) => {
+      const getScore = (name) => {
+        let score = 0;
+        const n = name.toLowerCase();
+        if (n.includes("70b") || n.includes("larger")) score += 100;
+        if (n.includes("versatile") || n.includes("instruct")) score += 50;
+        if (n.includes("8x7b") || n.includes("32b")) score += 40;
+        if (n.includes("8b") || n.includes("9b")) score += 10;
+        if (n.includes("1b") || n.includes("3b")) score -= 50;
+        return score;
+      };
+      return getScore(b) - getScore(a);
+    });
+
+    console.log("📋 Dynamically ranked text models:", textModels);
+
+    // ۴. حلقه هوشمند: تلاش روی مدل‌ها به ترتیب قدرت
     for (const model of textModels) {
       try {
-        console.log(`🤖 Requesting priority model: ${model}...`);
+        console.log(`🤖 Requesting dynamically selected model: ${model}...`);
         const completion = await openai.chat.completions.create({
           model: model,
-          messages: [{ role: "user", content: fullPrompt }],
+          messages: [{ role: "user", content: prompt }],
           temperature: 0.3,
-          frequency_penalty: 0.1, // مقدار امن برای حفظ دستور زبان فارسی
-          presence_penalty: 0.1,
           max_tokens: 2200,
         });
 
@@ -128,12 +142,24 @@ ${studentDetailsText}
             .replace(/```/g, "")
             .trim();
 
-          console.log(`✅ Robust diet generated with model: ${model}`);
-          return cleanText;
+          // اعتبارسنجی کیفیت: اگر متن ناقص یا بدون ساختار بود به سراغ مدل بعدی برود
+          const isValidOutput =
+            (cleanText.includes("هدف اصلی") || cleanText.includes("## 🎯")) &&
+            cleanText.includes("صبحانه") &&
+            cleanText.length > 300;
+
+          if (isValidOutput) {
+            console.log(`✅ High quality response from model: ${model}`);
+            return cleanText;
+          } else {
+            console.warn(
+              `⚠️ Model ${model} generated invalid structure, switching to next...`,
+            );
+          }
         }
       } catch (err) {
         console.warn(
-          `⚠️ Model ${model} failed, trying next...`,
+          `⚠️ Model ${model} failed, trying next available...`,
           err.message || err,
         );
       }
