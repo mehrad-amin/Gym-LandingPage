@@ -15,50 +15,57 @@ export async function fetchDietFromAI(studentDetailsText) {
   });
 
   const systemInstruction = `
-You are an expert sports nutritionist and fitness coach.
+You are an expert sports nutritionist and clinical fitness coach.
 CRITICAL RULES:
-1. Output MUST be ONLY in Persian (Farsi).
+1. Output MUST be ONLY in fluent Persian (Farsi).
 2. DO NOT output any English thinking process, reasoning, planning steps, or intros like "Here's a thinking process".
 3. Start IMMEDIATELY with the first markdown heading "## 🎯 اهداف و استراتژی تغذیه".
-4. Absolutely NO markdown backticks at the beginning/end (\`\`\`markdown or \`\`\`).
-5. Strictly use household units (کف دست، قاشق غذاخوری، لیوان، پیاله) instead of grams or calorie numbers.
-6. Consider all dietary notes and allergies (like gluten allergy) carefully.
+4. Absolutely NO markdown codeblocks (\`\`\`markdown or \`\`\`).
+5. STRICT UNIT RULES:
+   - Use "کف دست" ONLY for bread, chicken breast, meat, and fish. NEVER use "کف دست" for rice or liquids.
+   - Use "قاشق غذاخوری" for rice, quinoa, and oats.
+   - Use "عدد" for eggs, potatoes, and fruits.
+   - Use "پیاله" for salad and yogurt.
+6. CALORIE & PORTION SCALING:
+   - If the goal is "افزایش حجم / عضله‌سازی" (Bulking / >2400 kcal): Carbohydrate and protein portions MUST be generous (e.g., 10-14 tbsp rice for lunch, 6-8 tbsp for dinner, 2 medium potatoes, plus healthy fats like nuts/olive oil). DO NOT give tiny portions like 2-5 tbsp rice for bulking.
+   - If the goal is "کاهش وزن / کات" (Cutting): Moderate carbs (5-6 tbsp rice) and higher fibrous vegetables.
+7. Strictly respect all allergies and notes (e.g., Gluten allergy -> no wheat, barley, standard bread, or regular pasta. Use rice, potatoes, corn, quinoa, or certified gluten-free options).
 `;
 
   const userPrompt = `
-بر اساس مشخصات زیر، برنامه غذایی ۳۰ روزه را دقیقاً طبق ساختار مشخص‌شده تنظیم کن:
+بر اساس مشخصات زیر، برنامه غذایی ۳۰ روزه را با رعایت دقیق سهم‌ها متناسب با هدف (حجم یا کات) و با مقیاس‌های خانگی صحیح تنظیم کن:
 
 مشخصات متقاضی:
 ${studentDetailsText}
 
-قالب دقیق خروجی (دقیقاً با همین عناوین مارک‌داون شروع و پر شود):
+قالب دقیق خروجی (دقیقاً با همین عناوین مارک‌داون شروع و تکمیل شود):
 
 ## 🎯 اهداف و استراتژی تغذیه
 - **هدف اصلی:** [هدف متقاضی]
-- **رویکرد تغذیه‌ای:** [توضیح کوتاه ۱ الی ۲ جمله‌ای متناسب با شرایط و حساسیت‌های غذایی]
+- **رویکرد تغذیه‌ای:** [توضیح کوتاه ۱ الی ۲ جمله‌ای متناسب با شرایط، تارگت کالری و حساسیت‌های غذایی]
 
 ## 🍳 وعده‌های اصلی و میان‌وعده‌ها
 
 ### ۱. صبحانه (یکی از دو گزینه انتخاب شود)
-- **گزینه الف:** [آیتم‌های ساده با مقیاس خانگی]
-- **گزینه ب:** [آیتم‌های جایگزین با مقیاس خانگی]
+- **گزینه الف:** [ترکیب پروتئین + کربوهیدرات مناسب با مقیاس خانگی]
+- **گزینه ب:** [گزینه جایگزین با مقیاس خانگی]
 
 ### ۲. میان‌وعده اول (ساعت ۱۰ تا ۱۱ صبح)
-- [گزینه سبک و مقوی]
+- [میوه + منبع چربی سالم یا مغزیجات]
 
 ### ۳. ناهار (یکی از دو گزینه انتخاب شود)
-- **گزینه الف:** [غذای اصلی + منبع کربوهیدرات + سالاد با مقیاس خانگی]
-- **گزینه ب:** [غذای جایگزین با مقیاس خانگی]
+- **گزینه الف:** [پروتئین + کربوهیدرات کافی متناسب با تارگت کالری + سالاد با روغن زیتون]
+- **گزینه ب:** [غذای جایگزین ایرانی و در دسترس]
 
 ### ۴. میان‌وعده عصر (قبل تمرین / عصرانه)
-- [سوخت مناسب تمرین با مقیاس خانگی]
+- [سوخت مناسب تمرین متناسب با هدف]
 
 ### ۵. شام (سبک و زودهنگام)
-- **گزینه الف:** [شام پروتئینی و متناسب با شرایط متقاضی]
+- **گزینه الف:** [پروتئین باکیفیت + کربوهیدرات متناسب با هدف + سبزیجات]
 - **گزینه ب:** [شام جایگزین ساده]
 
 ## 🔄 راهنمای جایگزینی سریع
-- **پروتئین‌ها:** ۱ کف دست سینه مرغ/گوشت = ۲ عدد تخم‌مرغ = ۱ قوطی کبریت پنیر = ۱ پیاله ماست پرپروتئین
+- **پروتئین‌ها:** ۱ کف دست سینه مرغ/گوشت = ۲ عدد تخم‌مرغ کامل = ۱ قوطی کبریت پنیر = ۱ پیاله ماست پرپروتئین
 - **کربوهیدرات‌ها:** ۵ قاشق غذاخوری برنج = ۱ عدد سیب‌زمینی متوسط = ۱ پیاله ذرت آبپز = ۱ کف دست نان مناسب
 
 ## 💡 ۳ اصل کلیدی برای نتیجه‌گیری حداکثری
