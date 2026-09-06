@@ -2,14 +2,13 @@ import FitnessCalculator from "@/components/FitnessCalculator";
 import BeforeAfterSlider from "@/components/BeforeAfterSlider";
 import BookingForm from "@/components/BookingForm";
 import {
-  HERO_STATS,
   SERVICES,
   TRANSFORMATIONS,
   PRICING_PLANS,
   FAQS,
 } from "@/constants/fitnessData";
 import ContactSection from "@/components/ContactSection";
-import { Counter } from "@/components/Counter";
+import HeroSection from "@/components/HeroSection";
 
 function CheckIcon() {
   return (
@@ -36,50 +35,7 @@ export default function FitnessLandingPage() {
   return (
     <main className="flex flex-col items-center justify-between">
       {/* هیرو سکشن */}
-      <section className="relative w-full overflow-hidden border-b border-fitness-border py-20 md:py-32">
-        <div className="mx-auto max-w-6xl px-6 text-center">
-          <span className="inline-block rounded-full border border-fitness-primary/30 bg-fitness-primary/10 px-4 py-1.5 text-xs font-semibold text-fitness-primary">
-            کوچینگ علمی و تخصصی تناسب اندام
-          </span>
-          <h1 className="mt-6 text-4xl font-black leading-tight tracking-tight md:text-6xl">
-            رسیدن به اوج فیزیک بدنی با <br className="hidden md:inline" />
-            <span className="text-fitness-primary">
-              برنامه‌ریزی دقیق و بدون حدس‌و‌گمان
-            </span>
-          </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-fitness-muted md:text-lg">
-            تمرینات هدفمند، رژیم غذایی اصولی و آنالیز مستمر هفتگی، طراحی‌شده
-            اختصاصی برای ژنتیک و سبک زندگی شما.
-          </p>
-          <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
-            <a
-              href="#booking"
-              className="inline-flex items-center justify-center rounded-xl bg-fitness-primary px-8 py-4 font-bold text-black transition-all hover:bg-fitness-primary-hover"
-            >
-              دریافت برنامه اختصاصی
-            </a>
-            <a
-              href="#calculator"
-              className="inline-flex items-center justify-center rounded-xl border border-fitness-border bg-fitness-surface px-8 py-4 font-semibold text-fitness-text transition-all hover:border-fitness-primary"
-            >
-              محاسبه رایگان کالری
-            </a>
-          </div>
-
-          <div className="mx-auto mt-16 grid max-w-3xl grid-cols-3 gap-4 border-t border-fitness-border pt-10">
-            {HERO_STATS.map((stat, i) => (
-              <div key={i} className="text-center">
-                <p className="text-2xl font-black text-fitness-primary md:text-4xl">
-                  <Counter value={stat.value} duration={2} />
-                </p>
-                <p className="mt-1 text-xs text-fitness-muted md:text-sm">
-                  {stat.label}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <HeroSection />
 
       {/* سرویس‌ها و متدها */}
       <section className="w-full py-20">

@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@google/genai": "^2.19.0",
+    "@react-three/drei": "^10.7.8",
+    "@react-three/fiber": "^9.7.0",
     "@sparticuz/chromium": "^147.0.0",
     "@vercel/functions": "^3.9.5",
     "framer-motion": "^13.1.0",
@@ -19,7 +21,8 @@
     "puppeteer": "^24.43.1",
     "puppeteer-core": "^24.43.1",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "three": "^0.185.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
