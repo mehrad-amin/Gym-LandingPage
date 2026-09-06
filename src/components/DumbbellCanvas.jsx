@@ -5,31 +5,32 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { Float } from "@react-three/drei";
 import * as THREE from "three";
 
+// 🚀 ۱. تعریف متریال‌ها خارج از کامپوننت (فقط یک‌بار در حافظه GPU ساخته و کش می‌شوند)
+const metalMaterial = new THREE.MeshStandardMaterial({
+  color: "#18181b",
+  metalness: 0.9,
+  roughness: 0.25,
+});
+
+const gripMaterial = new THREE.MeshStandardMaterial({
+  color: "#27272a",
+  metalness: 0.6,
+  roughness: 0.6,
+});
+
+const neonRingMaterial = new THREE.MeshStandardMaterial({
+  color: "#22c55e",
+  emissive: "#22c55e",
+  emissiveIntensity: 0.8,
+  metalness: 0.2,
+  roughness: 0.3,
+});
+
 function InteractiveDumbbell() {
   const groupRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
   const touchStartPos = useRef({ x: 0, y: 0 });
   const targetRotation = useRef({ x: 0.35, y: 0.8 });
-
-  const metalMaterial = new THREE.MeshStandardMaterial({
-    color: "#18181b",
-    metalness: 0.9,
-    roughness: 0.25,
-  });
-
-  const gripMaterial = new THREE.MeshStandardMaterial({
-    color: "#27272a",
-    metalness: 0.6,
-    roughness: 0.6,
-  });
-
-  const neonRingMaterial = new THREE.MeshStandardMaterial({
-    color: "#22c55e",
-    emissive: "#22c55e",
-    emissiveIntensity: 0.8,
-    metalness: 0.2,
-    roughness: 0.3,
-  });
 
   useFrame((_, delta) => {
     if (!groupRef.current) return;
@@ -76,9 +77,9 @@ function InteractiveDumbbell() {
       onPointerCancel={handlePointerUp}
       scale={1.15}
     >
-      {/* میله وسط */}
+      {/* میله وسط - سگمنت بهینه ۱۶ */}
       <mesh material={gripMaterial} rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[0.22, 0.22, 3.8, 24]} />
+        <cylinderGeometry args={[0.22, 0.22, 3.8, 16]} />
       </mesh>
 
       {/* حلقه‌های نئونی سبز */}
@@ -87,55 +88,55 @@ function InteractiveDumbbell() {
         position={[-1.25, 0, 0]}
         rotation={[0, 0, Math.PI / 2]}
       >
-        <torusGeometry args={[0.24, 0.04, 16, 32]} />
+        <torusGeometry args={[0.24, 0.04, 12, 20]} />
       </mesh>
       <mesh
         material={neonRingMaterial}
         position={[1.25, 0, 0]}
         rotation={[0, 0, Math.PI / 2]}
       >
-        <torusGeometry args={[0.24, 0.04, 16, 32]} />
+        <torusGeometry args={[0.24, 0.04, 12, 20]} />
       </mesh>
 
       {/* دیسک‌های چپ */}
       <group position={[-1.45, 0, 0]}>
         <mesh material={metalMaterial} rotation={[0, 0, Math.PI / 2]}>
-          <cylinderGeometry args={[1.2, 1.2, 0.35, 32]} />
+          <cylinderGeometry args={[1.2, 1.2, 0.35, 20]} />
         </mesh>
         <mesh
           material={neonRingMaterial}
           position={[-0.22, 0, 0]}
           rotation={[0, 0, Math.PI / 2]}
         >
-          <torusGeometry args={[1.05, 0.04, 16, 32]} />
+          <torusGeometry args={[1.05, 0.04, 12, 20]} />
         </mesh>
         <mesh
           material={metalMaterial}
           position={[-0.42, 0, 0]}
           rotation={[0, 0, Math.PI / 2]}
         >
-          <cylinderGeometry args={[0.95, 0.95, 0.32, 32]} />
+          <cylinderGeometry args={[0.95, 0.95, 0.32, 20]} />
         </mesh>
       </group>
 
       {/* دیسک‌های راست */}
       <group position={[1.45, 0, 0]}>
         <mesh material={metalMaterial} rotation={[0, 0, Math.PI / 2]}>
-          <cylinderGeometry args={[1.2, 1.2, 0.35, 32]} />
+          <cylinderGeometry args={[1.2, 1.2, 0.35, 20]} />
         </mesh>
         <mesh
           material={neonRingMaterial}
           position={[0.22, 0, 0]}
           rotation={[0, 0, Math.PI / 2]}
         >
-          <torusGeometry args={[1.05, 0.04, 16, 32]} />
+          <torusGeometry args={[1.05, 0.04, 12, 20]} />
         </mesh>
         <mesh
           material={metalMaterial}
           position={[0.42, 0, 0]}
           rotation={[0, 0, Math.PI / 2]}
         >
-          <cylinderGeometry args={[0.95, 0.95, 0.32, 32]} />
+          <cylinderGeometry args={[0.95, 0.95, 0.32, 20]} />
         </mesh>
       </group>
     </group>
@@ -151,12 +152,14 @@ export default function DumbbellCanvas() {
 
       <Canvas
         camera={{ position: [0, 0, 6], fov: 45 }}
+        // 🚀 ۲. محدود کردن dpr به [1, 1.5] در موبایل + خاموش کردن stencil و depth buffer سنگین
+        dpr={[1, 1.5]}
         gl={{
           alpha: true,
           antialias: true,
           powerPreference: "high-performance",
+          stencil: false,
         }}
-        dpr={[1, 2]}
       >
         <ambientLight intensity={0.8} />
         <directionalLight
@@ -176,7 +179,19 @@ export default function DumbbellCanvas() {
       </Canvas>
 
       <div className="pointer-events-none absolute bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-1.5 rounded-full border border-fitness-border/60 bg-fitness-surface/70 px-2.5 py-0.5 text-[10px] text-fitness-muted backdrop-blur-md">
-        <span>🔄</span>
+        <svg
+          className="h-3 w-3 text-fitness-primary"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+          />
+        </svg>
         <span>برای چرخش لمس کنید</span>
       </div>
     </div>
