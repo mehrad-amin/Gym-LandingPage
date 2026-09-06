@@ -10,6 +10,7 @@ import {
 import ContactSection from "@/components/ContactSection";
 import HeroSection from "@/components/HeroSection";
 import MethodologySection from "@/components/MethodologySection";
+import PricingSection from "@/components/PricingSection";
 
 function CheckIcon() {
   return (
@@ -72,69 +73,7 @@ export default function FitnessLandingPage() {
       </section>
 
       {/* تعرفه‌ها و پکیج‌ها */}
-      <section className="w-full border-t border-fitness-border py-20">
-        <div className="mx-auto max-w-5xl px-6">
-          <div className="mb-12 text-center">
-            <h2 className="text-2xl font-black md:text-3xl">
-              پلن‌های کوچینگ و اشتراک
-            </h2>
-            <p className="mt-2 text-sm text-fitness-muted">
-              انتخاب سطح همراهی متناسب با نیاز و تعهد شما
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-            {PRICING_PLANS.map((plan) => (
-              <div
-                key={plan.id}
-                className={`relative flex flex-col justify-between rounded-3xl border p-8 ${
-                  plan.isPopular
-                    ? "border-fitness-primary bg-fitness-surface shadow-[0_0_30px_rgba(204,255,0,0.05)]"
-                    : "border-fitness-border bg-fitness-surface"
-                }`}
-              >
-                {plan.isPopular && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-fitness-primary px-4 py-1 text-xs font-black text-black">
-                    پیشنهاد ویژه مربی
-                  </span>
-                )}
-                <div>
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-xl font-bold">{plan.title}</h3>
-                    <span className="text-xs text-fitness-muted">
-                      {plan.duration}
-                    </span>
-                  </div>
-                  <p className="mt-4 text-3xl font-black text-fitness-primary">
-                    {plan.price}
-                  </p>
-                  <ul className="mt-6 space-y-3">
-                    {plan.features.map((feat, index) => (
-                      <li
-                        key={index}
-                        className="flex items-center gap-2 text-sm text-fitness-muted"
-                      >
-                        <CheckIcon />
-                        {feat}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <a
-                  href="#booking"
-                  className={`mt-8 block w-full rounded-xl py-3 text-center font-bold transition-all ${
-                    plan.isPopular
-                      ? "bg-fitness-primary text-black hover:bg-fitness-primary-hover"
-                      : "border border-fitness-border bg-fitness-surface-light text-fitness-text hover:border-fitness-primary"
-                  }`}
-                >
-                  انتخاب این پلن
-                </a>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <PricingSection plans={PRICING_PLANS} />
 
       {/* سوالات متداول */}
       <section className="w-full border-t border-fitness-border py-20">

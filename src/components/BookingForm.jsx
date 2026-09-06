@@ -41,7 +41,7 @@ function SuccessCheckIcon() {
 export default function BookingForm() {
   const [formData, setFormData] = useState(INITIAL_FORM_DATA);
 
-  // مقداردهی تنبل اولیه بدون ایجاد Cascading Render
+  // مقداردهی اولیه از SessionStorage
   const [calcData, setCalcData] = useState(() => {
     if (typeof window === "undefined") return null;
     try {
@@ -59,9 +59,22 @@ export default function BookingForm() {
   });
   const [coachUsername, setCoachUsername] = useState("");
 
+  // شنیدن تغییرات آنی از ماشین‌حساب و همگام‌سازی هدف
   useEffect(() => {
     const handleUpdate = (event) => {
-      setCalcData(event?.detail || null);
+      const data = event?.detail || null;
+      setCalcData(data);
+
+      // همگام‌سازی خودکار سلکت هدف در فرم بر اساس انتخاب ماشین‌حساب
+      if (data?.result?.goalKey) {
+        if (data.result.goalKey === "cut") {
+          setFormData((prev) => ({ ...prev, goal: "کات و چربی‌سوزی" }));
+        } else if (data.result.goalKey === "bulk") {
+          setFormData((prev) => ({ ...prev, goal: "افزایش حجم و عضله‌سازی" }));
+        } else if (data.result.goalKey === "maintain") {
+          setFormData((prev) => ({ ...prev, goal: "آمادگی جسمانی و سلامت" }));
+        }
+      }
     };
 
     window.addEventListener("fitness_calc_updated", handleUpdate);
@@ -125,7 +138,6 @@ export default function BookingForm() {
       );
       setStatus({ loading: false, success: true, error: "" });
 
-      // پاکسازی پس از موفقیت
       try {
         sessionStorage.removeItem("user_fitness_data");
       } catch (_) {}
@@ -139,7 +151,6 @@ export default function BookingForm() {
     }
   };
 
-  // نمای تایید و تشکر پس از ثبت فرم
   if (status.success) {
     const telegramDirectUrl = coachUsername
       ? `https://t.me/${coachUsername.replace("@", "")}`
@@ -184,23 +195,38 @@ export default function BookingForm() {
     );
   }
 
+  // استخراج عدد دقیق تارگت متناسب با هدف انتخابی
+  const displayCalories =
+    calcData?.result?.targetCalories ||
+    calcData?.result?.tdee ||
+    calcData?.result?.cutting;
+
+  const goalName =
+    calcData?.result?.goal ||
+    (calcData?.result?.goalKey === "bulk"
+      ? "حجم"
+      : calcData?.result?.goalKey === "maintain"
+        ? "تثبیت"
+        : "کات");
+
   return (
     <div className="rounded-3xl border border-fitness-border bg-fitness-surface p-6 md:p-10">
       {calcData && (
-        <div className="mb-6 flex items-center justify-between rounded-2xl border border-fitness-primary/30 bg-fitness-primary/10 p-4">
-          <div className="text-xs">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-fitness-primary/30 bg-fitness-primary/10 p-4">
+          <div className="text-xs leading-relaxed">
             <span className="font-bold text-fitness-primary">
               اطلاعات ماشین‌حساب ضمیمه شد:{" "}
             </span>
             <span className="text-fitness-text">
-              وزن: {calcData.weight}kg | قد: {calcData.height}cm | هدف کالری:{" "}
-              {calcData.result?.cutting} kcal
+              وزن: {calcData.weight}kg | قد: {calcData.height}cm | هدف:{" "}
+              <strong className="text-fitness-primary">{goalName}</strong> (
+              {displayCalories} kcal)
             </span>
           </div>
           <button
             type="button"
             onClick={handleClearCalcData}
-            className="text-xs text-fitness-muted underline hover:text-white"
+            className="cursor-pointer text-xs text-fitness-muted underline hover:text-white"
           >
             حذف
           </button>
@@ -262,9 +288,9 @@ export default function BookingForm() {
               onChange={handleChange}
               className="w-full rounded-xl border border-fitness-border bg-fitness-surface-light p-3 text-sm text-fitness-text outline-none focus:border-fitness-primary"
             >
-              {GOAL_OPTIONS.map((goal) => (
-                <option key={goal} value={goal}>
-                  {goal}
+              {GOAL_OPTIONS.map((g) => (
+                <option key={g} value={g}>
+                  {g}
                 </option>
               ))}
             </select>
