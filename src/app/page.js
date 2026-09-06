@@ -9,6 +9,7 @@ import {
 } from "@/constants/fitnessData";
 import ContactSection from "@/components/ContactSection";
 import HeroSection from "@/components/HeroSection";
+import MethodologySection from "@/components/MethodologySection";
 
 function CheckIcon() {
   return (
@@ -38,37 +39,7 @@ export default function FitnessLandingPage() {
       <HeroSection />
 
       {/* سرویس‌ها و متدها */}
-      <section className="w-full py-20">
-        <div className="mx-auto max-w-6xl px-6">
-          <div className="mb-12 text-center">
-            <h2 className="text-2xl font-black md:text-3xl">
-              متدولوژی و دوره‌های تمرینی
-            </h2>
-            <p className="mt-2 text-sm text-fitness-muted">
-              مسیر رسیدن به هدف شما طبق استانداردهای روز فیتنس
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-            {SERVICES.map((s) => (
-              <div
-                key={s.id}
-                className="flex flex-col justify-between rounded-3xl border border-fitness-border bg-fitness-surface p-6 transition-all hover:border-fitness-primary/40"
-              >
-                <div>
-                  <span className="inline-block rounded-md bg-fitness-surface-light px-3 py-1 text-xs font-semibold text-fitness-primary">
-                    {s.badge}
-                  </span>
-                  <h3 className="mt-4 text-xl font-bold">{s.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-fitness-muted">
-                    {s.desc}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <MethodologySection services={SERVICES} />
 
       {/* ماشین حساب BMR / TDEE */}
       <section
