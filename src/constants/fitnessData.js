@@ -94,7 +94,7 @@ export const FAQS = [
 
 export const CONTACT_INFO = {
   phone: "09395002816",
-  displayPhone: "۰۹۳۹۵۰۰۲۸۱۶",
+  displayPhone: "09395002817",
   telegramUsername: "CoachUsername",
   telegramUrl: "https://t.me/mehrad_amin",
   instagramUsername: "mehrad_amin",

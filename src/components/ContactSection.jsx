@@ -1,9 +1,12 @@
+"use client";
+
+import React, { useRef, useState } from "react";
 import { CONTACT_INFO } from "@/constants/fitnessData";
 
 function PhoneIcon() {
   return (
     <svg
-      className="h-6 w-6"
+      className="h-5 w-5"
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
@@ -22,7 +25,7 @@ function PhoneIcon() {
 function ChatIcon() {
   return (
     <svg
-      className="h-6 w-6"
+      className="h-5 w-5"
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
@@ -41,7 +44,7 @@ function ChatIcon() {
 function MapPinIcon() {
   return (
     <svg
-      className="h-6 w-6"
+      className="h-5 w-5"
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
@@ -65,7 +68,7 @@ function MapPinIcon() {
 function TelegramIcon() {
   return (
     <svg
-      className="h-5 w-5 fill-current text-fitness-primary flex justify-center items-center"
+      className="h-4 w-4 fill-current text-fitness-primary"
       viewBox="0 0 24 24"
       aria-hidden="true"
     >
@@ -77,7 +80,7 @@ function TelegramIcon() {
 function InstagramIcon() {
   return (
     <svg
-      className="h-5 w-5 fill-current text-fitness-primary"
+      className="h-4 w-4 fill-current text-fitness-primary"
       viewBox="0 0 24 24"
       aria-hidden="true"
     >
@@ -86,142 +89,223 @@ function InstagramIcon() {
   );
 }
 
+function Contact3DCard({ children, className = "" }) {
+  const cardRef = useRef(null);
+  const [coords, setCoords] = useState({ x: 50, y: 50 });
+  const [rotate, setRotate] = useState({ x: 0, y: 0 });
+  const [isInteracting, setIsInteracting] = useState(false);
+
+  const handlePointerMove = (e) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    setCoords({
+      x: Math.round((x / rect.width) * 100),
+      y: Math.round((y / rect.height) * 100),
+    });
+
+    const rotateX = (y / rect.height - 0.5) * -10;
+    const rotateY = (x / rect.width - 0.5) * 10;
+    setRotate({ x: rotateX, y: rotateY });
+  };
+
+  const handlePointerLeave = () => {
+    setIsInteracting(false);
+    setRotate({ x: 0, y: 0 });
+  };
+
+  return (
+    <div
+      ref={cardRef}
+      onPointerDown={() => setIsInteracting(true)}
+      onPointerMove={handlePointerMove}
+      onPointerLeave={handlePointerLeave}
+      onPointerCancel={handlePointerLeave}
+      style={{
+        transform: isInteracting
+          ? `perspective(1000px) rotateX(${rotate.x}deg) rotateY(${rotate.y}deg) translateY(-4px)`
+          : "perspective(1000px) rotateX(0deg) rotateY(0deg) translateY(0px)",
+        transition: isInteracting
+          ? "none"
+          : "transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1)",
+      }}
+      className={`group relative flex flex-col justify-between overflow-hidden rounded-[2rem] border border-fitness-border bg-gradient-to-b from-fitness-surface to-[#0a0d0c] p-7 shadow-[0_15px_35px_rgba(0,0,0,0.5)] transition-colors hover:border-fitness-primary/50 [transform-style:preserve-3d] ${className}`}
+    >
+      {/* هاله نور ردیاب زیر لمس یا ماوس */}
+      <div
+        className="pointer-events-none absolute -inset-px rounded-[2rem] opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-active:opacity-100"
+        style={{
+          background: `radial-gradient(350px circle at ${coords.x}% ${coords.y}%, rgba(34, 197, 94, 0.15), transparent 80%)`,
+        }}
+      />
+      <div className="relative z-10 flex h-full flex-col justify-between [transform:translateZ(20px)]">
+        {children}
+      </div>
+    </div>
+  );
+}
+
 export default function ContactSection() {
   return (
-    <section className="w-full border-t border-fitness-border py-20">
+    <section className="relative w-full border-t border-fitness-border py-16 md:py-24 overflow-hidden">
+      {/* نور محیطی پس‌زمینه */}
+      <div className="pointer-events-none absolute top-1/2 left-1/2 -z-10 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full bg-fitness-primary/5 blur-[150px]" />
+
       <div className="mx-auto max-w-6xl px-6">
         <div className="mb-12 text-center">
-          <span className="inline-block rounded-full border border-fitness-primary/30 bg-fitness-primary/10 px-4 py-1.5 text-xs font-semibold text-fitness-primary">
+          <span className="inline-block rounded-full border border-fitness-primary/30 bg-fitness-primary/10 px-4 py-1 text-xs font-bold text-fitness-primary mb-3">
             دسترسی و ارتباط مستقیم
           </span>
-          <h2 className="mt-4 text-2xl font-black md:text-4xl">
+          <h2 className="text-2xl font-black tracking-tight text-white md:text-4xl">
             راه‌های ارتباطی و موقعیت باشگاه
           </h2>
-          <p className="mt-2 text-sm text-fitness-muted">
+          <p className="mt-2 text-xs text-fitness-muted md:text-sm">
             جهت مشاوره حضوری، تست آنتروپومتری و تمرینات خصوصی در باشگاه
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* کارت ۱: تماس مستقیم و ساعات کاری */}
-          <div className="flex flex-col justify-between rounded-3xl border border-fitness-border bg-fitness-surface p-8 transition-all hover:border-fitness-primary/40">
+          <Contact3DCard>
             <div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-fitness-surface-light text-fitness-primary">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-fitness-primary/30 bg-fitness-primary/10 text-fitness-primary shadow-[0_0_15px_rgba(34,197,94,0.2)]">
                 <PhoneIcon />
               </div>
-              <h3 className="mt-6 text-xl font-bold text-fitness-text">
+              <h3 className="mt-5 text-lg font-black text-white">
                 تماس و مشاوره تلفنی
               </h3>
-              <p className="mt-2 text-xs leading-relaxed text-fitness-muted">
+              <p className="mt-1.5 text-xs leading-relaxed text-fitness-muted">
                 پاسخگویی به سوالات قبل از ثبت‌نام و رزرو تایم تمرین خصوصی:
               </p>
-              <div className="mt-4">
+
+              <div className="mt-5">
                 <a
                   href={`tel:${CONTACT_INFO.phone}`}
                   dir="ltr"
-                  className="text-lg font-black tracking-wider text-fitness-primary transition-colors hover:text-fitness-primary-hover"
+                  className="inline-flex items-center gap-2 rounded-xl border border-fitness-primary/40 bg-black/40 px-4 py-2.5 font-mono text-base font-black tracking-wider text-fitness-primary shadow-inner transition-all hover:bg-fitness-primary hover:text-black"
                 >
-                  {CONTACT_INFO.displayPhone}
+                  <PhoneIcon />
+                  <span>{CONTACT_INFO.displayPhone}</span>
                 </a>
               </div>
             </div>
 
-            <div className="mt-6 border-t border-fitness-border pt-4">
-              <span className="text-xs text-fitness-muted">
-                ساعات کاری باشگاه:
+            <div className="mt-6 border-t border-fitness-border/60 pt-4">
+              <span className="text-[11px] font-medium text-fitness-muted">
+                ساعات کاری و پاسخگویی باشگاه:
               </span>
-              <p className="mt-1 text-sm font-semibold text-fitness-text">
+              <p className="mt-1 text-xs font-bold text-zinc-200">
                 {CONTACT_INFO.workingHours}
               </p>
             </div>
-          </div>
+          </Contact3DCard>
 
           {/* کارت ۲: شبکه‌های اجتماعی (تلگرام و اینستاگرام) */}
-          <div className="flex flex-col justify-between rounded-3xl border border-fitness-border bg-fitness-surface p-8 transition-all hover:border-fitness-primary/40">
+          <Contact3DCard>
             <div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-fitness-surface-light text-fitness-primary">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-fitness-primary/30 bg-fitness-primary/10 text-fitness-primary shadow-[0_0_15px_rgba(34,197,94,0.2)]">
                 <ChatIcon />
               </div>
-              <h3 className="mt-6 text-xl font-bold text-fitness-text">
+              <h3 className="mt-5 text-lg font-black text-white">
                 شبکه‌های اجتماعی و چت
               </h3>
-              <p className="mt-2 text-xs leading-relaxed text-fitness-muted">
+              <p className="mt-1.5 text-xs leading-relaxed text-fitness-muted">
                 مشاهده روزمرگی‌های تمرینی، آموزش فرم حرکات و پیام مستقیم:
               </p>
 
-              <div className="mt-6 space-y-3">
-                {/* دکمه تلگرام */}
+              <div className="mt-5 space-y-2.5">
+                {/* تلگرام */}
                 <a
                   href={CONTACT_INFO.telegramUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-between rounded-xl border border-fitness-border bg-fitness-surface-light p-3.5 transition-all hover:border-fitness-primary hover:bg-fitness-surface-light/80"
+                  className="group/item flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-950/60 p-3 transition-all hover:border-fitness-primary hover:bg-fitness-primary/10"
                 >
-                  <div className="flex items-center gap-3">
-                    <TelegramIcon />
-                    <span className="text-sm font-semibold text-fitness-text">
+                  <div className="flex items-center gap-2.5">
+                    <div className="rounded-lg bg-fitness-primary/15 p-1.5">
+                      <TelegramIcon />
+                    </div>
+                    <span className="text-xs font-bold text-zinc-200 group-hover/item:text-white">
                       کانال و چت تلگرام
                     </span>
                   </div>
-                  <span className="font-mono text-xs text-fitness-muted">
+                  <span className="font-mono text-[11px] text-fitness-muted group-hover/item:text-fitness-primary">
                     @{CONTACT_INFO.telegramUsername}
                   </span>
                 </a>
 
-                {/* دکمه اینستاگرام */}
+                {/* اینستاگرام */}
                 <a
                   href={CONTACT_INFO.instagramUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-between rounded-xl border border-fitness-border bg-fitness-surface-light p-3.5 transition-all hover:border-fitness-primary hover:bg-fitness-surface-light/80"
+                  className="group/item flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-950/60 p-3 transition-all hover:border-fitness-primary hover:bg-fitness-primary/10"
                 >
-                  <div className="flex items-center gap-3">
-                    <InstagramIcon />
-                    <span className="text-sm font-semibold text-fitness-text">
+                  <div className="flex items-center gap-2.5">
+                    <div className="rounded-lg bg-fitness-primary/15 p-1.5">
+                      <InstagramIcon />
+                    </div>
+                    <span className="text-xs font-bold text-zinc-200 group-hover/item:text-white">
                       صفحه اینستاگرام
                     </span>
                   </div>
-                  <span className="font-mono text-xs text-fitness-muted">
+                  <span className="font-mono text-[11px] text-fitness-muted group-hover/item:text-fitness-primary">
                     @{CONTACT_INFO.instagramUsername}
                   </span>
                 </a>
               </div>
             </div>
-          </div>
 
-          {/* کارت ۳: موقعیت مکانی و مسیریابی */}
-          <div className="flex flex-col justify-between rounded-3xl border border-fitness-border bg-fitness-surface p-8 transition-all hover:border-fitness-primary/40">
+            <div className="mt-6 border-t border-fitness-border/60 pt-3 text-[11px] text-fitness-muted">
+              پاسخگویی سریع در دایرکت و تلگرام در ساعات کاری
+            </div>
+          </Contact3DCard>
+
+          {/* کارت ۳: رادار لوکیشن و مسیریابی */}
+          <Contact3DCard>
             <div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-fitness-surface-light text-fitness-primary">
-                <MapPinIcon />
+              <div className="flex items-center justify-between">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-fitness-primary/30 bg-fitness-primary/10 text-fitness-primary shadow-[0_0_15px_rgba(34,197,94,0.2)]">
+                  <MapPinIcon />
+                </div>
+                {/* بج آنلاین بودن لوکیشن */}
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-bold text-emerald-400">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  موقعیت فعال
+                </span>
               </div>
-              <h3 className="mt-6 text-xl font-bold text-fitness-text">
+
+              <h3 className="mt-5 text-lg font-black text-white">
                 آدرس باشگاه و لوکیشن
               </h3>
-              <p className="mt-2 text-xs leading-relaxed text-fitness-muted">
+              <p className="mt-1.5 text-xs leading-relaxed text-fitness-muted">
                 {CONTACT_INFO.address}
               </p>
             </div>
 
-            <div className="mt-6 flex items-center gap-3 border-t border-fitness-border pt-4">
-              <a
-                href={CONTACT_INFO.googleMapsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 rounded-xl border border-fitness-border bg-fitness-surface-light py-3 text-center text-xs font-bold text-fitness-text transition-colors hover:border-fitness-primary hover:text-fitness-primary"
-              >
-                گوگل مپ
-              </a>
-              <a
-                href={CONTACT_INFO.neshanMapsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 rounded-xl border border-fitness-border bg-fitness-surface-light py-3 text-center text-xs font-bold text-fitness-text transition-colors hover:border-fitness-primary hover:text-fitness-primary"
-              >
-                مسیریابی با نشان
-              </a>
+            <div className="mt-6">
+              <div className="flex items-center gap-2 border-t border-fitness-border/60 pt-4">
+                <a
+                  href={CONTACT_INFO.googleMapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 rounded-xl border border-fitness-border bg-zinc-950/70 py-3 text-center text-xs font-black text-zinc-200 transition-all hover:border-fitness-primary hover:bg-fitness-primary hover:text-black shadow-sm"
+                >
+                  گوگل مپ
+                </a>
+                <a
+                  href={CONTACT_INFO.neshanMapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 rounded-xl border border-fitness-border bg-zinc-950/70 py-3 text-center text-xs font-black text-zinc-200 transition-all hover:border-fitness-primary hover:bg-fitness-primary hover:text-black shadow-sm"
+                >
+                  مسیریابی با نشان
+                </a>
+              </div>
             </div>
-          </div>
+          </Contact3DCard>
         </div>
       </div>
     </section>

@@ -35,17 +35,48 @@ export async function POST(request) {
       formattedPhone = "98" + formattedPhone.substring(1);
     }
 
-    // ساخت بخش گزارش محاسبات بدنی در صورت وجود
+    // ساخت بخش گزارش متمرکز و تفکیک‌شده آنالیز بدنی
     let statsSectionHtml = "";
     if (calculatedStats?.result) {
       const genderLabel = calculatedStats.gender === "female" ? "خانم" : "آقا";
+
+      // استخراج کالری و استراتژی انتخابی کاربر
+      const chosenCalories =
+        calculatedStats.result.targetCalories ||
+        calculatedStats.result.tdee ||
+        "-";
+
+      const chosenGoalTitle =
+        calculatedStats.result.goal ||
+        (calculatedStats.result.goalKey === "bulk"
+          ? "حجم و عضله‌سازی"
+          : calculatedStats.result.goalKey === "maintain"
+            ? "تثبیت وزن"
+            : "کات و چربی‌سوزی");
+
+      // تفکیک ماکروها با نام کامل «کربوهیدرات»
+      const protein = calculatedStats.result.macros?.protein
+        ? `${calculatedStats.result.macros.protein}g`
+        : `${Math.round((Number(chosenCalories) * 0.3) / 4)}g`;
+
+      const carbs = calculatedStats.result.macros?.carbs
+        ? `${calculatedStats.result.macros.carbs}g`
+        : `${Math.round((Number(chosenCalories) * 0.45) / 4)}g`;
+
+      const fats = calculatedStats.result.macros?.fats
+        ? `${calculatedStats.result.macros.fats}g`
+        : `${Math.round((Number(chosenCalories) * 0.25) / 9)}g`;
+
       statsSectionHtml = `
-📊 <b>آنالیز بدنی و کالری:</b>
+━━━━━━━━━━━━━━
+📊 <b>آنالیز اختصاصی ماشین‌حساب:</b>
 • مشخصات: ${genderLabel} / ${calculatedStats.age || "-"} سال
-• قد و وزن: ${calculatedStats.height || "-"}cm / ${calculatedStats.weight || "-"}kg
-• کالری تثبیت (TDEE): <b>${calculatedStats.result.tdee || "-"} kcal</b>
-• تارگت کات: <b>${calculatedStats.result.cutting || "-"} kcal</b>
-• تارگت حجم: <b>${calculatedStats.result.bulking || "-"} kcal</b>`;
+• وزن بدن: <b>${calculatedStats.weight || "-"} کیلوگرم</b>
+• قد: <b>${calculatedStats.height || "-"} سانتی‌متر</b>
+• متابولیسم پایه (BMR): <b>${calculatedStats.result.bmr || "-"} kcal</b>
+• استراتژی انتخابی: <b>${chosenGoalTitle}</b>
+• تارگت کالری روزانه: <b>${chosenCalories} kcal</b>
+• ماکرو پیشنهادی: پروتئین: ${protein} | کربوهیدرات: ${carbs} | چربی: ${fats}`;
     }
 
     // تاریخ با منطقه زمانی تهران
@@ -53,23 +84,22 @@ export async function POST(request) {
       timeZone: "Asia/Tehran",
     });
 
-    // قالب پیام تلگرام
+    // قالب نهایی و خوانا برای پیام تلگرام
     const messageText = `🏋️‍♂️ <b>درخواست جدید مشاوره کوچینگ</b>
 ━━━━━━━━━━━━━━
-👤 <b>نام:</b> ${safeName}
-📞 <b>شماره:</b> <code>${safePhone}</code>
-🎯 <b>هدف:</b> ${safeGoal}
+👤 <b>نام متقاضی:</b> ${safeName}
+📞 <b>شماره تماس:</b> <code>${safePhone}</code>
+🎯 <b>هدف اعلامی در فرم:</b> ${safeGoal}
 📊 <b>سابقه تمرین:</b> ${safeExperience}
 📝 <b>توضیحات:</b> ${safeNotes}${statsSectionHtml}
 ━━━━━━━━━━━━━━
-⏰ <b>زمان:</b> ${currentDate}`;
+⏰ <b>زمان ثبت:</b> ${currentDate}`;
 
     const telegramToken = process.env.TELEGRAM_BOT_TOKEN;
     const telegramChatId = process.env.TELEGRAM_CHAT_ID;
     const coachTelegramUsername =
       process.env.NEXT_PUBLIC_COACH_TELEGRAM_USERNAME || "";
 
-    // دکمه اینلاین برای تلگرام
     const inlineKeyboard = {
       inline_keyboard: [
         [
@@ -93,7 +123,7 @@ export async function POST(request) {
       const fetchOptions = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        signal: AbortSignal.timeout(15000), // افزایش به ۱۵ ثانیه
+        signal: AbortSignal.timeout(15000),
       };
 
       // ۱. ارسال پیام متنی
@@ -126,7 +156,6 @@ export async function POST(request) {
       );
     }
 
-    // ارسال موازی بدون معطل کردن ریسپانس در صورت خطای یک سرویس
     await Promise.allSettled(notificationPromises);
 
     return NextResponse.json(

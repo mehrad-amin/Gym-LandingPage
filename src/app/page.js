@@ -11,6 +11,7 @@ import ContactSection from "@/components/ContactSection";
 import HeroSection from "@/components/HeroSection";
 import MethodologySection from "@/components/MethodologySection";
 import PricingSection from "@/components/PricingSection";
+import FaqSection from "@/components/FaqSection";
 
 function CheckIcon() {
   return (
@@ -76,31 +77,7 @@ export default function FitnessLandingPage() {
       <PricingSection plans={PRICING_PLANS} />
 
       {/* سوالات متداول */}
-      <section className="w-full border-t border-fitness-border py-20">
-        <div className="mx-auto max-w-4xl px-6">
-          <div className="mb-10 text-center">
-            <h2 className="text-2xl font-black md:text-3xl">سوالات پرتکرار</h2>
-          </div>
-          <div className="space-y-4">
-            {FAQS.map((faq, idx) => (
-              <details
-                key={idx}
-                className="group rounded-2xl border border-fitness-border bg-fitness-surface p-5 [&_summary::-webkit-details-marker]:hidden"
-              >
-                <summary className="flex cursor-pointer items-center justify-between font-bold text-fitness-text">
-                  <span>{faq.question}</span>
-                  <span className="transition-transform group-open:rotate-180">
-                    ↓
-                  </span>
-                </summary>
-                <p className="mt-4 text-sm leading-relaxed text-fitness-muted">
-                  {faq.answer}
-                </p>
-              </details>
-            ))}
-          </div>
-        </div>
-      </section>
+      <FaqSection faqs={FAQS} />
 
       {/* بخش راه‌های ارتباطی و موقعیت مکانی */}
       <ContactSection />
