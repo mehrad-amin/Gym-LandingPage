@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
 
-export const runtime = "nodejs";
-
 function escapeHtml(text) {
   if (!text) return "";
   return String(text)
